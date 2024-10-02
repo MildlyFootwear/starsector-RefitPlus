@@ -1,10 +1,12 @@
 package Shoey.RefitPlus;
 
 import Shoey.RefitPlus.Kotlin.Refit;
+import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
+import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.fleet.FleetMemberAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
@@ -23,44 +25,49 @@ import java.util.List;
 import static Shoey.RefitPlus.MainPlugin.*;
 
 
-public class CampaignRefitRenderer implements CampaignUIRenderingListener, CampaignInputListener {
+public class CampaignRefitRenderer implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
 
     private Logger log = Global.getLogger(this.getClass());
     boolean init;
     FleetMemberAPI FleetMember;
     boolean Cancel = false;
+    boolean needOverlayPlacement = true;
     Refit RefitInstance = new Refit();
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
-
-
+    UIPanelAPI lastRefit;
+    float timer = 0;
     void UpdateOverlay() {
 
-        for (LabelAPI l : tests) {
-            try {
-                refit.removeComponent((UIComponentAPI) l);
-                refit.addComponent((UIComponentAPI) l);
-            } catch (Exception e) {
-            }
-        }
-
         if (RefitHooked) {
-
+            try {
+                for (LabelAPI l : tests) {
+                    refit.removeComponent((UIComponentAPI) l);
+                    refit.addComponent((UIComponentAPI) l);
+                }
+                log.info("Added labels");
+                lastRefit = refit;
+                needOverlayPlacement = false;
+            } catch (Exception e) {
+                needOverlayPlacement = true;
+            }
         } else {
+            needOverlayPlacement = true;
             log.error("Refit not hooked.");
         }
-        //test.getPosition().setLocation(Global.getSettings().getScreenWidth()/2, Global.getSettings().getScreenHeight()/2);
     }
 
     void pingRefit(boolean rehook)
     {
-
         FleetMemberAPI current = RefitInstance.getRefitShip(rehook);
         if (current != FleetMember || rehook) {
             FleetMember = current;
             if (current != null) {
-                log.info("Updated FM to " + FleetMember.getShipName());
-                UpdateOverlay();
+                if (needOverlayPlacement)
+                    log.debug("Pre-overlay: Updated FM to " + FleetMember.getShipName());
+                else
+                    log.debug("Post-overlay: Updated FM to " + FleetMember.getShipName());
+                needOverlayPlacement = true;
             }
             else
                 log.info("Cleared previousFM");
@@ -78,6 +85,15 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         else {
             Cancel = false;
             pingRefit(false);
+
+            if (lastRefit != refit)
+            {
+                needOverlayPlacement = true;
+                log.debug("lastRefit is not refit");
+            }
+
+            if (needOverlayPlacement)
+                UpdateOverlay();
         }
 
     }
@@ -87,7 +103,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
         if (!init) {
             init = true;
-            log.setLevel(Level.INFO);
+            log.setLevel(logLevel);
             float x = 0;
             LabelAPI ll = null;
             for (String s : fonts) {
@@ -124,7 +140,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     @Override
     public int getListenerInputPriority() {
-        return 0;
+        return 100;
     }
 
     @Override
@@ -158,5 +174,13 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
 
+    }
+
+    @Override
+    public void reportAboutToOpenCoreTab(CoreUITabId tab, Object param) {
+        log.debug("Clearing variables as opening prep");
+        Cancel = true;
+        RefitHooked = false;
+        FleetMember = null;
     }
 }

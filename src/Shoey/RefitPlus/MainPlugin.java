@@ -10,6 +10,7 @@ import com.fs.starfarer.api.combat.ShipAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.lf5.LogLevel;
 
 
 public class MainPlugin extends BaseModPlugin {
@@ -20,7 +21,7 @@ public class MainPlugin extends BaseModPlugin {
     public static CampaignUIAPI cUI = null;
     public static ShipAPI ship = null;
     public static CampaignFleetAPI playerFleet = null;
-    public static CombatEngineAPI combatEngine = null;
+    public static Level logLevel = Level.DEBUG;
     public static float refitShipSelecterTimer = 0;
 
     public static boolean RefitHooked;
@@ -31,7 +32,7 @@ public class MainPlugin extends BaseModPlugin {
     @Override
     public void onApplicationLoad() throws Exception {
         super.onApplicationLoad();
-        log.setLevel(Level.INFO);
+        log.setLevel(logLevel);
     }
 
     @Override
