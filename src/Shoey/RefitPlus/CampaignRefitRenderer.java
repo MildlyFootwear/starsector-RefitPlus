@@ -64,7 +64,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
             RefitHooked = false;
             FleetMember = null;
         }
-        FleetMemberAPI current = RefitInstance.invokeMethod("getMember", refit);
+        FleetMemberAPI current = (FleetMemberAPI) RefitInstance.invokeMethod("getMember", refit);
         if (current != FleetMember || rehook) {
             FleetMember = current;
             if (current != null) {

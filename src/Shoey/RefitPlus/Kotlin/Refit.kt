@@ -3,7 +3,6 @@ package Shoey.RefitPlus.Kotlin
 import Shoey.RefitPlus.MainPlugin.RefitHooked
 import Shoey.RefitPlus.MainPlugin.refit
 import com.fs.starfarer.api.Global
-import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.ui.*
 import com.fs.state.AppDriver
 import lunalib.lunaExtensions.*
@@ -51,12 +50,12 @@ class Refit {
 
                         if (child3 is UIPanelAPI) {
                             refit = child3
-                            RefitHooked = true;
+                            RefitHooked = true
 
                             log.info("Refit menu has " + child3.getChildrenCopy().count() + " components")
                         } else {
-                            refit = null;
-                            RefitHooked = false;
+                            refit = null
+                            RefitHooked = false
                             log.error("Couldn't hook refit.")
                         }
                     }
@@ -74,7 +73,7 @@ class Refit {
     }
 
     //Required to execute obfuscated methods without referencing their obfuscated class name.
-    fun invokeMethod(methodName: String, instance: Any, vararg arguments: Any?): FleetMemberAPI? {
+    fun invokeMethod(methodName: String, instance: Any, vararg arguments: Any?): Any? {
         var method: Any? = null
 
         val clazz = instance.javaClass
@@ -82,8 +81,11 @@ class Refit {
         val methodType = MethodType.methodType(Void.TYPE, args)
 
         method = clazz.getMethod(methodName, *methodType.parameterArray())
-
-        return invokeMethodHandle.invoke(method, instance, arguments) as FleetMemberAPI
+        try {
+            return invokeMethodHandle.invoke(method, instance, arguments)
+        } catch (e: Exception) {
+            return null
+        }
     }
 
 
