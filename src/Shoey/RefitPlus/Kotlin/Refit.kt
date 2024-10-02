@@ -1,8 +1,8 @@
 package Shoey.RefitPlus.Kotlin
 
-import Shoey.RefitPlus.MainPlugin.RefitHooked
-import Shoey.RefitPlus.MainPlugin.refit
+import Shoey.RefitPlus.MainPlugin.*
 import com.fs.starfarer.api.Global
+import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.ui.*
 import com.fs.state.AppDriver
 import lunalib.lunaExtensions.*
@@ -62,6 +62,7 @@ class Refit {
                 }
             }
         }
+        KotlinWait = false;
 
     }
 
@@ -70,6 +71,15 @@ class Refit {
 
         val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
         return instancesOfMethods.any { getMethodNameHandle.invoke(it) == name }
+    }
+
+    fun getRefitFleetMember(): FleetMemberAPI?
+    {
+        try {
+            return invokeMethodHandle.invoke("method", refit, null) as FleetMemberAPI
+        } catch (e: Exception) {
+            return null
+        }
     }
 
     //Required to execute obfuscated methods without referencing their obfuscated class name.

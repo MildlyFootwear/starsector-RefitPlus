@@ -23,6 +23,7 @@ public class MainPlugin extends BaseModPlugin {
 
     public static boolean RefitHooked;
     public static boolean needOverlayPlacement = true;
+    public static boolean KotlinWait = false;
 
     public static CampaignRefitRenderer cRR;
 

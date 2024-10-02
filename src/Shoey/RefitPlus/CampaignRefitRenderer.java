@@ -59,12 +59,28 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     void pingRefit(boolean rehook)
     {
-        RefitInstance.getRefit(refit == null || !RefitHooked || rehook);
         if (rehook) {
             RefitHooked = false;
             FleetMember = null;
         }
-        FleetMemberAPI current = (FleetMemberAPI) RefitInstance.invokeMethod("getMember", refit);
+        if (refit == null || !RefitHooked)
+        {
+            KotlinWait = true;
+            RefitInstance.getRefit(true);
+            while (KotlinWait)
+            {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+
+        if (refit == null)
+            return;
+
+        RehookInCheck = false;
+        FleetMemberAPI current = RefitInstance.getRefitFleetMember();
         if (current != FleetMember || rehook) {
             FleetMember = current;
             if (current != null) {
@@ -94,7 +110,6 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         } else {
             Cancel = false;
             pingRefit(RehookInCheck);
-            RehookInCheck = false;
 
             if (lastRefit != refit)
             {
