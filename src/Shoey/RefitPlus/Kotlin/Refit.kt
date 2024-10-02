@@ -29,7 +29,7 @@ class Refit {
     )
     private val log = Global.getLogger(this.javaClass)
 
-    fun getRefitShip(logActs: Boolean): FleetMemberAPI? {
+    fun getRefitShip(reHook: Boolean): FleetMemberAPI? {
 
         var state = AppDriver.getInstance().currentState
         var core = invokeMethod("getCore", state)
@@ -39,7 +39,7 @@ class Refit {
             core = invokeMethod("getCoreUI", dialog)
         }
 
-        if (refit == null || !RefitHooked) {
+        if (refit == null || !RefitHooked || reHook) {
 
             if (core is UIPanelAPI) {
                 var child1 = core.getChildrenCopy().find { hasMethodOfName("setBorderInsetLeft", it) }
@@ -52,8 +52,8 @@ class Refit {
                         if (child3 is UIPanelAPI) {
                             refit = child3
                             RefitHooked = true;
-                            if (logActs)
-                                log.info("Refit menu has "+child3.getChildrenCopy().count()+" components")
+
+                            log.info("Refit menu has " + child3.getChildrenCopy().count() + " components")
                         }
                     }
                 }

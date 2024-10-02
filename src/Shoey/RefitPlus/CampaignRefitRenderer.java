@@ -12,6 +12,7 @@ import com.fs.starfarer.api.input.InputEventType;
 import com.fs.starfarer.api.ui.Fonts;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
+import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Keyboard;
@@ -34,14 +35,16 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
 
     void UpdateOverlay() {
-        if (RefitHooked) {
-            for (LabelAPI l : tests) {
-                try {
-                    refit.removeComponent((UIComponentAPI) l);
-                    refit.addComponent((UIComponentAPI) l);
-                } catch (Exception e) {
-                }
+
+        for (LabelAPI l : tests) {
+            try {
+                refit.removeComponent((UIComponentAPI) l);
+                refit.addComponent((UIComponentAPI) l);
+            } catch (Exception e) {
             }
+        }
+
+        if (RefitHooked) {
 
         } else {
             log.error("Refit not hooked.");
@@ -49,32 +52,33 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         //test.getPosition().setLocation(Global.getSettings().getScreenWidth()/2, Global.getSettings().getScreenHeight()/2);
     }
 
-    void pingRefit(boolean print)
+    void pingRefit(boolean rehook)
     {
-        FleetMemberAPI current = RefitInstance.getRefitShip(print);
-        if (current != FleetMember) {
-            FleetMember = current;
-            if (current != null)
-                log.info("Updated FM to " + FleetMember.getShipName());
-            else
-                log.info("Cleared previousFM");
 
-            if (FleetMember != null) {
+        FleetMemberAPI current = RefitInstance.getRefitShip(rehook);
+        if (current != FleetMember || rehook) {
+            FleetMember = current;
+            if (current != null) {
+                log.info("Updated FM to " + FleetMember.getShipName());
                 UpdateOverlay();
             }
+            else
+                log.info("Cleared previousFM");
         }
+
     }
 
     void FrameChecks() {
 
-        Cancel = sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT;
-
-        if (!Cancel) {
-
-            pingRefit(false);
-
-        } else
+        if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT) {
+            Cancel = true;
             RefitHooked = false;
+            FleetMember = null;
+        }
+        else {
+            Cancel = false;
+            pingRefit(false);
+        }
 
     }
 
@@ -97,9 +101,6 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         }
 
         FrameChecks();
-
-        if (Cancel)
-            return;
 
 
     }
@@ -130,15 +131,20 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
     public void processCampaignInputPreCore(List<InputEventAPI> events) {
 
         for (InputEventAPI e : events) {
+
+            if (Cancel)
+                return;
+
             if (e.isConsumed())
                 continue;
 
             if (e.getEventType() == InputEventType.MOUSE_DOWN)
-                RefitHooked = false;
+                pingRefit(true);
 
             int pressedKey = e.getEventValue();
             if (pressedKey == Keyboard.KEY_SPACE) {
                 pingRefit(true);
+                e.consume();
             }
         }
 
