@@ -1,7 +1,6 @@
 package Shoey.RefitPlus;
 
 import Shoey.RefitPlus.Kotlin.Refit;
-import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
@@ -15,7 +14,6 @@ import com.fs.starfarer.api.ui.Fonts;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 
@@ -37,7 +35,6 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
     UIPanelAPI lastRefit;
-    float timer = 0;
 
     void UpdateOverlay(String s) {
         if (!s.isEmpty())
@@ -117,7 +114,6 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         if (!init) {
             init = true;
             log.setLevel(logLevel);
-            float x = 0;
             LabelAPI ll = null;
             for (String s : fonts) {
                 LabelAPI l = Global.getSettings().createLabel("The Game", s);
