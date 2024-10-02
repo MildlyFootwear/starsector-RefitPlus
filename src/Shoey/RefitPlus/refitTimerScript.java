@@ -17,8 +17,7 @@ public class refitTimerScript implements EveryFrameScript {
 
     @Override
     public void advance(float amount) {
-        if (refitShipSelecterTimer < 0.5)
-        {
+        if (refitShipSelecterTimer < 0.5) {
             refitShipSelecterTimer += amount;
         }
     }

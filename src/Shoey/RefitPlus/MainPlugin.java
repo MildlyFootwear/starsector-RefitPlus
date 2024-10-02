@@ -1,18 +1,15 @@
 package Shoey.RefitPlus;
-import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.SettingsAPI;
+
 import com.fs.starfarer.api.BaseModPlugin;
+import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
 import com.fs.starfarer.api.combat.CombatEngineAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
-import com.fs.starfarer.campaign.CampaignEngine;
-import com.fs.starfarer.api.campaign.CampaignClockAPI;
+import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import java.lang.System;
 
 
 public class MainPlugin extends BaseModPlugin {
@@ -25,6 +22,11 @@ public class MainPlugin extends BaseModPlugin {
     public static CampaignFleetAPI playerFleet = null;
     public static CombatEngineAPI combatEngine = null;
     public static float refitShipSelecterTimer = 0;
+
+    public static boolean RefitHooked;
+
+    public static UIPanelAPI refit = null;
+
 
     @Override
     public void onApplicationLoad() throws Exception {
@@ -42,14 +44,12 @@ public class MainPlugin extends BaseModPlugin {
     }
 
     @Override
-    public void beforeGameSave()
-    {
+    public void beforeGameSave() {
         super.beforeGameSave();
     }
 
     @Override
-    public void afterGameSave()
-    {
+    public void afterGameSave() {
         super.afterGameSave();
     }
 }
