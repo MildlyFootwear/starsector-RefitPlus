@@ -22,9 +22,11 @@ public class MainPlugin extends BaseModPlugin {
     public static ShipAPI ship = null;
     public static CampaignFleetAPI playerFleet = null;
     public static Level logLevel = Level.DEBUG;
-    public static float refitShipSelecterTimer = 0;
 
     public static boolean RefitHooked;
+    public static boolean needOverlayPlacement = true;
+
+    public static CampaignRefitRenderer cRR;
 
     public static UIPanelAPI refit = null;
 
@@ -41,7 +43,9 @@ public class MainPlugin extends BaseModPlugin {
         sector = Global.getSector();
         cUI = sector.getCampaignUI();
         playerFleet = sector.getPlayerFleet();
-        sector.getListenerManager().addListener(new CampaignRefitRenderer(), true);
+        cRR = new CampaignRefitRenderer();
+        sector.getListenerManager().removeListenerOfClass(CampaignRefitRenderer.class);
+        sector.getListenerManager().addListener(cRR, true);
     }
 
     @Override

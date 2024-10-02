@@ -2,12 +2,15 @@ package Shoey.RefitPlus;
 
 import com.fs.starfarer.api.EveryFrameScript;
 
-import static Shoey.RefitPlus.MainPlugin.refitShipSelecterTimer;
+import static Shoey.RefitPlus.MainPlugin.cRR;
 
 public class refitTimerScript implements EveryFrameScript {
+    boolean fin = false;
+    float refitShipSelecterTimer = 0;
+    int frame = 0;
     @Override
     public boolean isDone() {
-        return refitShipSelecterTimer > 0.5;
+        return !cRR.Wait;
     }
 
     @Override
@@ -17,8 +20,18 @@ public class refitTimerScript implements EveryFrameScript {
 
     @Override
     public void advance(float amount) {
-        if (refitShipSelecterTimer < 0.5) {
-            refitShipSelecterTimer += amount;
+        if (frame < 10) {
+            if (frame == 0)
+                cRR.FrameChecks();
+            frame++;
+        }
+        else {
+            if (refitShipSelecterTimer < 0.1) {
+                refitShipSelecterTimer += amount;
+            } else {
+                cRR.Wait = false;
+                fin = true;
+            }
         }
     }
 }

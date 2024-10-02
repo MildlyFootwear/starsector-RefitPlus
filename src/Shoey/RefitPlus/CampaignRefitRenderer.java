@@ -27,18 +27,21 @@ import static Shoey.RefitPlus.MainPlugin.*;
 
 public class CampaignRefitRenderer implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
 
-    private Logger log = Global.getLogger(this.getClass());
+    Logger log = Global.getLogger(this.getClass());
     boolean init;
     FleetMemberAPI FleetMember;
     boolean Cancel = false;
-    boolean needOverlayPlacement = true;
+    boolean Wait = false;
+    boolean RehookInCheck = false;
     Refit RefitInstance = new Refit();
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
     UIPanelAPI lastRefit;
     float timer = 0;
-    void UpdateOverlay() {
 
+    void UpdateOverlay(String s) {
+        if (!s.isEmpty())
+            log.debug("Running UpdateOverlay from "+s);
         if (RefitHooked) {
             try {
                 for (LabelAPI l : tests) {
@@ -59,7 +62,12 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     void pingRefit(boolean rehook)
     {
-        FleetMemberAPI current = RefitInstance.getRefitShip(rehook);
+        RefitInstance.getRefit(refit == null || !RefitHooked || rehook);
+        if (rehook) {
+            RefitHooked = false;
+            FleetMember = null;
+        }
+        FleetMemberAPI current = RefitInstance.invokeMethod("getMember", refit);
         if (current != FleetMember || rehook) {
             FleetMember = current;
             if (current != null) {
@@ -77,14 +85,19 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     void FrameChecks() {
 
-        if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT) {
+        if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT || Wait) {
+            if (Wait)
+            {
+                log.debug("Waiting...");
+                RehookInCheck = true;
+            }
             Cancel = true;
             RefitHooked = false;
             FleetMember = null;
-        }
-        else {
+        } else {
             Cancel = false;
-            pingRefit(false);
+            pingRefit(RehookInCheck);
+            RehookInCheck = false;
 
             if (lastRefit != refit)
             {
@@ -93,7 +106,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
             }
 
             if (needOverlayPlacement)
-                UpdateOverlay();
+                UpdateOverlay("");
         }
 
     }
@@ -116,16 +129,10 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
             }
         }
 
-        FrameChecks();
-
-
     }
 
     @Override
     public void renderInUICoordsAboveUIBelowTooltips(ViewportAPI viewport) {
-
-        if (Cancel)
-            return;
 
 
     }
@@ -133,8 +140,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
 
-        if (Cancel)
-            return;
+        FrameChecks();
 
     }
 
@@ -178,9 +184,11 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     @Override
     public void reportAboutToOpenCoreTab(CoreUITabId tab, Object param) {
+        if (tab != CoreUITabId.REFIT)
+            return;
         log.debug("Clearing variables as opening prep");
-        Cancel = true;
-        RefitHooked = false;
-        FleetMember = null;
+        Wait = true;
+        sector.removeScriptsOfClass(refitTimerScript.class);
+        sector.addTransientScript(new refitTimerScript());
     }
 }

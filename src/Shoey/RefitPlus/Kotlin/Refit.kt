@@ -29,17 +29,17 @@ class Refit {
     )
     private val log = Global.getLogger(this.javaClass)
 
-    fun getRefitShip(reHook: Boolean): FleetMemberAPI? {
+    fun getRefit(reHook: Boolean) {
 
-        var state = AppDriver.getInstance().currentState
-        var core = invokeMethod("getCore", state)
+        if (reHook) {
 
-        var dialog = invokeMethod("getEncounterDialog", state)
-        if (dialog != null) {
-            core = invokeMethod("getCoreUI", dialog)
-        }
+            var state = AppDriver.getInstance().currentState
+            var core = invokeMethod("getCore", state)
 
-        if (refit == null || !RefitHooked || reHook) {
+            var dialog = invokeMethod("getEncounterDialog", state)
+            if (dialog != null) {
+                core = invokeMethod("getCoreUI", dialog)
+            }
 
             if (core is UIPanelAPI) {
                 var child1 = core.getChildrenCopy().find { hasMethodOfName("setBorderInsetLeft", it) }
@@ -54,16 +54,14 @@ class Refit {
                             RefitHooked = true;
 
                             log.info("Refit menu has " + child3.getChildrenCopy().count() + " components")
+                        } else {
+                            refit = null;
+                            RefitHooked = false;
+                            log.error("Couldn't hook refit.")
                         }
                     }
                 }
             }
-        }
-
-        try {
-            return invokeMethod("getMember", refit) as FleetMemberAPI
-        } catch (e: Exception) {
-            return null;
         }
 
     }
@@ -76,7 +74,7 @@ class Refit {
     }
 
     //Required to execute obfuscated methods without referencing their obfuscated class name.
-    private fun invokeMethod(methodName: String, instance: Any, vararg arguments: Any?): Any? {
+    fun invokeMethod(methodName: String, instance: Any, vararg arguments: Any?): FleetMemberAPI? {
         var method: Any? = null
 
         val clazz = instance.javaClass
@@ -85,7 +83,7 @@ class Refit {
 
         method = clazz.getMethod(methodName, *methodType.parameterArray())
 
-        return invokeMethodHandle.invoke(method, instance, arguments)
+        return invokeMethodHandle.invoke(method, instance, arguments) as FleetMemberAPI
     }
 
 
