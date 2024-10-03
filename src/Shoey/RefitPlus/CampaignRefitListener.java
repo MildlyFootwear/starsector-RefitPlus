@@ -194,7 +194,7 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
                 continue;
 
             if (e.getEventType() == InputEventType.MOUSE_DOWN)
-                pingRefit(true);
+                pingRefit(false);
 
             int pressedKey = e.getEventValue();
             if (pressedKey == Keyboard.KEY_SPACE) {
