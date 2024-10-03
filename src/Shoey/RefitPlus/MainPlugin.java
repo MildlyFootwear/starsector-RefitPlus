@@ -44,13 +44,16 @@ public class MainPlugin extends BaseModPlugin {
         cRR = new CampaignRefitListener();
         sector.getListenerManager().removeListenerOfClass(CampaignRefitListener.class);
         sector.getListenerManager().addListener(cRR, true);
+        sector.addTransientScript(new EveryFrameChecks());
     }
 
+    @SuppressWarnings("EmptyMethod")
     @Override
     public void beforeGameSave() {
         super.beforeGameSave();
     }
 
+    @SuppressWarnings("EmptyMethod")
     @Override
     public void afterGameSave() {
         super.afterGameSave();

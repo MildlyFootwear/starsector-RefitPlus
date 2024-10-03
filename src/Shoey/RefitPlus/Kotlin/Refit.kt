@@ -1,3 +1,5 @@
+@file:Suppress("LiftReturnOrAssignment")
+
 package Shoey.RefitPlus.Kotlin
 
 import Shoey.RefitPlus.MainPlugin.*
@@ -13,6 +15,7 @@ import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 
 
+@Suppress("unused")
 class Refit {
 
     private val fieldClass = Class.forName("java.lang.reflect.Field", false, Class::class.java.classLoader)
@@ -33,7 +36,7 @@ class Refit {
 
     private fun hookFail()
     {
-        KotlinWait = false;
+        KotlinWait = false
         refit = null
         RefitHooked = false
         log.debug("Couldn't hook refit.")
@@ -87,9 +90,9 @@ class Refit {
                                     try {
                                         var s: String? = invokeMethod("getText", ui) as String
                                         if (s != null && s == "The Game") {
-                                            if (refitTimerScript.loopcount == 0) {
-                                                log.debug("You lost.")
-                                            }
+//                                            if (refitTimerScript.loopcount == 0) {
+//                                                log.debug("You lost.")
+//                                            }
                                             cRR.lastRefit = child3
                                             alreadyHooked()
                                             break
@@ -113,7 +116,7 @@ class Refit {
                 }
             }
         }
-        KotlinWait = false;
+        KotlinWait = false
 
     }
 
@@ -128,7 +131,7 @@ class Refit {
 
     //Required to execute obfuscated methods without referencing their obfuscated class name.
     fun invokeMethod(methodName: String, instance: Any, vararg arguments: Any?): Any? {
-        var method: Any? = null
+        lateinit var method: Any
 
         val clazz = instance.javaClass
         val args = arguments.map { it!!::class.javaPrimitiveType ?: it::class.java }
@@ -148,7 +151,7 @@ class Refit {
 
     //Extends the UI API by adding the required method to get the child objects of a panel, only when used within this class.
     private fun UIPanelAPI.getChildrenCopy(): List<UIComponentAPI> {
-        return invokeMethod("getChildrenCopy", this) as List<UIComponentAPI>
+        return getChildrenCopyFromHook(this)
     }
 
     //Used to be able to find specific files without having to reference their obfuscated class name.

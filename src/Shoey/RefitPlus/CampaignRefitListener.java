@@ -15,7 +15,6 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Logger;
-import org.lwjgl.input.Keyboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,13 +25,13 @@ import static Shoey.RefitPlus.MainPlugin.*;
 public class CampaignRefitListener implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
 
     Logger log = Global.getLogger(this.getClass());
-    boolean init;
-    FleetMemberAPI FleetMember;
-    boolean Cancel = false;
-    boolean Wait = false;
-    boolean WaitPrinted = false;
-    boolean RehookInCheck = false;
-    static Refit RefitInstance = new Refit();
+    public boolean init;
+    public FleetMemberAPI RefitMember;
+    public boolean Cancel = false;
+    public boolean Wait = false;
+    public boolean WaitPrinted = false;
+    public boolean RehookInCheck = false;
+    public static Refit RefitInstance = new Refit();
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
     public UIPanelAPI lastRefit;
@@ -41,7 +40,7 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     {
         refit = null;
         RefitHooked = false;
-        FleetMember = null;
+        RefitMember = null;
     }
 
     void hookIfNeeded()
@@ -54,11 +53,15 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
                 log.debug("Kotlin waiting");
                 Thread.sleep(10);
             } catch (InterruptedException e) {
+
             }
         }
     }
 
     void InsertOverlay(String s) {
+
+        if (!s.isEmpty())
+            log.debug("Executing InsertOverlay from "+s);
 
         hookIfNeeded();
 
@@ -83,11 +86,16 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
         }
     }
 
+    void InsertOverlay()
+    {
+        InsertOverlay("");
+    }
+
     void pingRefit(boolean rehook)
     {
         if (rehook || refit == null || !RefitHooked) {
             RefitHooked = false;
-            FleetMember = null;
+            RefitMember = null;
         }
         if (refit == null || !RefitHooked)
         {
@@ -99,13 +107,13 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
 
         RehookInCheck = false;
         FleetMemberAPI current = RefitInstance.getRefitFleetMember();
-        if (current != FleetMember || rehook) {
-            FleetMember = current;
+        if (current != RefitMember || rehook) {
+            RefitMember = current;
             if (current != null) {
                 if (needOverlayPlacement)
-                    log.debug("Pre-overlay: Updated FM to " + FleetMember.getShipName());
+                    log.debug("Pre-overlay: Updated FM to " + RefitMember.getShipName());
                 else
-                    log.debug("Post-overlay: Updated FM to " + FleetMember.getShipName());
+                    log.debug("Post-overlay: Updated FM to " + RefitMember.getShipName());
                 needOverlayPlacement = true;
             }
             else
@@ -115,38 +123,6 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     }
 
     void FrameChecks() {
-
-        if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT || Wait) {
-            if (Wait)
-            {
-                if (!WaitPrinted) {
-                    log.debug("Waiting...");
-                    WaitPrinted = true;
-                }
-                RehookInCheck = true;
-            }
-            Cancel = true;
-            RefitHooked = false;
-            FleetMember = null;
-        } else {
-            WaitPrinted = false;
-            Cancel = false;
-            pingRefit(RehookInCheck);
-
-            if (lastRefit != refit)
-            {
-                needOverlayPlacement = true;
-                log.debug("lastRefit is not refit");
-            }
-
-            if (needOverlayPlacement)
-                InsertOverlay("");
-        }
-
-    }
-
-    @Override
-    public void renderInUICoordsBelowUI(ViewportAPI viewport) {
 
         if (!init) {
             init = true;
@@ -160,7 +136,44 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
                 ll = l;
                 tests.add(l);
             }
+            log.debug("Campaign listener initialized");
         }
+
+        if (KotlinWait) {
+            return;
+        }
+        if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT || Wait) {
+            if (Wait)
+            {
+                if (!WaitPrinted) {
+                    log.debug("Waiting...");
+                    WaitPrinted = true;
+                }
+                RehookInCheck = true;
+            }
+            Cancel = true;
+            RefitHooked = false;
+            RefitMember = null;
+            return;
+        }
+
+        WaitPrinted = false;
+        Cancel = false;
+        pingRefit(RehookInCheck);
+
+        if (lastRefit != refit)
+        {
+            needOverlayPlacement = true;
+            log.debug("lastRefit is not refit");
+        }
+
+        if (needOverlayPlacement)
+            InsertOverlay();
+
+    }
+
+    @Override
+    public void renderInUICoordsBelowUI(ViewportAPI viewport) {
 
     }
 
@@ -173,8 +186,6 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     @Override
     public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
 
-        FrameChecks();
-
     }
 
     @Override
@@ -185,24 +196,6 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     @Override
     public void processCampaignInputPreCore(List<InputEventAPI> events) {
 
-        for (InputEventAPI e : events) {
-
-            if (Cancel)
-                return;
-
-            if (e.isConsumed())
-                continue;
-
-            if (e.getEventType() == InputEventType.MOUSE_DOWN)
-                pingRefit(false);
-
-            int pressedKey = e.getEventValue();
-            if (pressedKey == Keyboard.KEY_SPACE) {
-                pingRefit(true);
-                e.consume();
-            }
-        }
-
     }
 
     @Override
@@ -212,6 +205,20 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
 
     @Override
     public void processCampaignInputPostCore(List<InputEventAPI> events) {
+
+        for (InputEventAPI e : events) {
+
+            if (Cancel)
+                return;
+
+            if (e.isConsumed())
+                continue;
+
+            if (e.getEventType() == InputEventType.MOUSE_DOWN) {
+                pingRefit(false);
+                return;
+            }
+        }
 
     }
 
