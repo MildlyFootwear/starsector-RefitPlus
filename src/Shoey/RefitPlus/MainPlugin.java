@@ -25,7 +25,7 @@ public class MainPlugin extends BaseModPlugin {
     public static boolean needOverlayPlacement = true;
     public static boolean KotlinWait = false;
 
-    public static CampaignRefitRenderer cRR;
+    public static CampaignRefitListener cRR;
 
     public static UIPanelAPI refit = null;
 
@@ -41,8 +41,8 @@ public class MainPlugin extends BaseModPlugin {
         sector = Global.getSector();
         cUI = sector.getCampaignUI();
         playerFleet = sector.getPlayerFleet();
-        cRR = new CampaignRefitRenderer();
-        sector.getListenerManager().removeListenerOfClass(CampaignRefitRenderer.class);
+        cRR = new CampaignRefitListener();
+        sector.getListenerManager().removeListenerOfClass(CampaignRefitListener.class);
         sector.getListenerManager().addListener(cRR, true);
     }
 

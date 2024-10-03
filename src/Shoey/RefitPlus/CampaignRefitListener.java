@@ -23,7 +23,7 @@ import java.util.List;
 import static Shoey.RefitPlus.MainPlugin.*;
 
 
-public class CampaignRefitRenderer implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
+public class CampaignRefitListener implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
 
     Logger log = Global.getLogger(this.getClass());
     boolean init;
