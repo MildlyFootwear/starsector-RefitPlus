@@ -1,7 +1,10 @@
 package Shoey.RefitPlus.Kotlin
 
 import Shoey.RefitPlus.MainPlugin.*
+import Shoey.RefitPlus.refitTimerScript
+import com.fs.starfarer.api.GameState
 import com.fs.starfarer.api.Global
+import com.fs.starfarer.api.campaign.CoreUITabId
 import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.ui.*
 import com.fs.state.AppDriver
@@ -26,9 +29,28 @@ class Refit {
         "invoke",
         MethodType.methodType(Any::class.java, Any::class.java, Array<Any>::class.java)
     )
-    private val log = Global.getLogger(this.javaClass)
+    private var log = Global.getLogger(this.javaClass)
+
+    private fun hookFail()
+    {
+        KotlinWait = false;
+        refit = null
+        RefitHooked = false
+        log.debug("Couldn't hook refit.")
+    }
+
+    private fun alreadyHooked()
+    {
+        Global.getSector().removeScriptsOfClass(refitTimerScript().javaClass)
+        Global.getSector().addTransientScript(refitTimerScript())
+    }
 
     fun getRefit(reHook: Boolean) {
+
+        if (Global.getSettings().currentState != GameState.CAMPAIGN || cUI == null || cUI.currentCoreTab != CoreUITabId.REFIT)
+            return
+
+        log.level = logLevel
 
         if (reHook) {
 
@@ -46,31 +68,53 @@ class Refit {
                     var child2 = child1.getChildrenCopy().find { hasMethodOfName("goBackToParentIfNeeded", it) }
 
                     if (child2 is UIPanelAPI) {
-                        var child3 = child2.getChildrenCopy().find { hasMethodOfName("syncWithCurrentVariant", it) }
 
-                        if (child3 is UIPanelAPI) {
-                            refit = child3
-                            RefitHooked = true
+                        var refitParentChildrenCopy = child2.getChildrenCopy()
+                        var child3 = refitParentChildrenCopy.find { hasMethodOfName("syncWithCurrentVariant", it) }
 
-                            log.info("Refit menu has " + child3.getChildrenCopy().count() + " components")
-                        } else {
-                            refit = null
-                            RefitHooked = false
-                            log.error("Couldn't hook refit.")
+                        if (child3 !is UIPanelAPI) {
+                            hookFail()
+                            return
                         }
+
+                        var refitChildren = child3.getChildrenCopy()
+
+                        try {
+                            for (ui: UIComponentAPI? in refitChildren) {
+                                if (ui == null)
+                                    continue
+                                if (hasMethodOfName("getText", ui)) {
+                                    try {
+                                        var s: String? = invokeMethod("getText", ui) as String
+                                        if (s != null && s == "The Game") {
+                                            if (refitTimerScript.loopcount == 0) {
+                                                log.debug("You lost.")
+                                            }
+                                            cRR.lastRefit = child3
+                                            alreadyHooked()
+                                            break
+                                        }
+                                    } catch (e: Exception)
+                                    {
+                                        log.error("Kotlin error caught in label")
+                                    }
+                                }
+                            }
+                        } catch (e: Exception)
+                        {
+                            log.error("Kotlin error caught in refitChildren")
+                            hookFail()
+                            return
+                        }
+                        log.info("Refit menu has " + refitChildren.count() + " components")
+                        refit = child3
+                        RefitHooked = true
                     }
                 }
             }
         }
         KotlinWait = false;
 
-    }
-
-    //Used to be able to find specific files without having to reference their obfuscated class name.
-    private fun hasMethodOfName(name: String, instance: Any): Boolean {
-
-        val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
-        return instancesOfMethods.any { getMethodNameHandle.invoke(it) == name }
     }
 
     fun getRefitFleetMember(): FleetMemberAPI?
@@ -98,10 +142,20 @@ class Refit {
         }
     }
 
+    fun getChildrenCopyFromHook(panelAPI: UIPanelAPI): List<UIComponentAPI> {
+        return invokeMethod("getChildrenCopy", panelAPI) as List<UIComponentAPI>
+    }
 
     //Extends the UI API by adding the required method to get the child objects of a panel, only when used within this class.
     private fun UIPanelAPI.getChildrenCopy(): List<UIComponentAPI> {
         return invokeMethod("getChildrenCopy", this) as List<UIComponentAPI>
+    }
+
+    //Used to be able to find specific files without having to reference their obfuscated class name.
+    private fun hasMethodOfName(name: String, instance: Any): Boolean {
+
+        val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
+        return instancesOfMethods.any { getMethodNameHandle.invoke(it) == name }
     }
 
 }

@@ -30,16 +30,39 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
     FleetMemberAPI FleetMember;
     boolean Cancel = false;
     boolean Wait = false;
+    boolean WaitPrinted = false;
     boolean RehookInCheck = false;
-    Refit RefitInstance = new Refit();
+    static Refit RefitInstance = new Refit();
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
-    UIPanelAPI lastRefit;
+    public UIPanelAPI lastRefit;
 
-    void UpdateOverlay(String s) {
-        if (!s.isEmpty())
-            log.debug("Running UpdateOverlay from "+s);
-        if (RefitHooked) {
+    void clearRefitVars()
+    {
+        refit = null;
+        RefitHooked = false;
+        FleetMember = null;
+    }
+
+    void hookIfNeeded()
+    {
+        KotlinWait = true;
+        RefitInstance.getRefit(refit == null || !RefitHooked);
+        while (KotlinWait)
+        {
+            try {
+                log.debug("Kotlin waiting");
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+    void InsertOverlay(String s) {
+
+        hookIfNeeded();
+
+        if (RefitHooked && lastRefit != refit && refit != null) {
             try {
                 for (LabelAPI l : tests) {
                     refit.removeComponent((UIComponentAPI) l);
@@ -49,9 +72,12 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
                 lastRefit = refit;
                 needOverlayPlacement = false;
             } catch (Exception e) {
+                log.debug(e.getMessage());
                 needOverlayPlacement = true;
             }
+        } else if (lastRefit == refit && lastRefit != null) {
         } else {
+            clearRefitVars();
             needOverlayPlacement = true;
             log.error("Refit not hooked.");
         }
@@ -59,21 +85,13 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
 
     void pingRefit(boolean rehook)
     {
-        if (rehook) {
+        if (rehook || refit == null || !RefitHooked) {
             RefitHooked = false;
             FleetMember = null;
         }
         if (refit == null || !RefitHooked)
         {
-            KotlinWait = true;
-            RefitInstance.getRefit(true);
-            while (KotlinWait)
-            {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                }
-            }
+            hookIfNeeded();
         }
 
         if (refit == null)
@@ -101,13 +119,17 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT || Wait) {
             if (Wait)
             {
-                log.debug("Waiting...");
+                if (!WaitPrinted) {
+                    log.debug("Waiting...");
+                    WaitPrinted = true;
+                }
                 RehookInCheck = true;
             }
             Cancel = true;
             RefitHooked = false;
             FleetMember = null;
         } else {
+            WaitPrinted = false;
             Cancel = false;
             pingRefit(RehookInCheck);
 
@@ -118,7 +140,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
             }
 
             if (needOverlayPlacement)
-                UpdateOverlay("");
+                InsertOverlay("");
         }
 
     }
@@ -198,8 +220,7 @@ public class CampaignRefitRenderer implements CampaignUIRenderingListener, Campa
         if (tab != CoreUITabId.REFIT)
             return;
         log.debug("Clearing variables as opening prep");
-        Wait = true;
-        sector.removeScriptsOfClass(refitTimerScript.class);
-        sector.addTransientScript(new refitTimerScript());
+        refitTimerScript.loopcount = 0;
+        clearRefitVars();
     }
 }

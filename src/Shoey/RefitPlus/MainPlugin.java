@@ -29,7 +29,6 @@ public class MainPlugin extends BaseModPlugin {
 
     public static UIPanelAPI refit = null;
 
-
     @Override
     public void onApplicationLoad() throws Exception {
         super.onApplicationLoad();

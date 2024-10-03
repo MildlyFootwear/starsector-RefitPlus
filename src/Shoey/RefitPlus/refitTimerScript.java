@@ -7,10 +7,10 @@ import static Shoey.RefitPlus.MainPlugin.cRR;
 public class refitTimerScript implements EveryFrameScript {
     boolean fin = false;
     float refitShipSelecterTimer = 0;
-    int frame = 0;
+    public static int loopcount = 0;
     @Override
     public boolean isDone() {
-        return !cRR.Wait;
+        return fin;
     }
 
     @Override
@@ -20,18 +20,19 @@ public class refitTimerScript implements EveryFrameScript {
 
     @Override
     public void advance(float amount) {
-        if (frame < 10) {
-            if (frame == 0)
-                cRR.FrameChecks();
-            frame++;
+        if (loopcount == 5)
+        {
+            cRR.log.debug("Stopping monitor loop.");
+            fin = true;
+            loopcount = 0;
+            return;
         }
-        else {
-            if (refitShipSelecterTimer < 0.1) {
-                refitShipSelecterTimer += amount;
-            } else {
-                cRR.Wait = false;
-                fin = true;
-            }
+        if (refitShipSelecterTimer < 0.1) {
+            refitShipSelecterTimer += amount;
+        } else {
+            loopcount++;
+            cRR.pingRefit(true);
+            fin = true;
         }
     }
 }
