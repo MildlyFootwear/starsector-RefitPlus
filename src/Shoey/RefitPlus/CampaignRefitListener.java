@@ -3,14 +3,10 @@ package Shoey.RefitPlus;
 import Shoey.RefitPlus.Kotlin.Refit;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
-import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
-import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
+import com.fs.starfarer.api.combat.MutableShipStatsAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
-import com.fs.starfarer.api.combat.ViewportAPI;
-import com.fs.starfarer.api.fleet.FleetMemberAPI;
-import com.fs.starfarer.api.input.InputEventAPI;
-import com.fs.starfarer.api.input.InputEventType;
+import com.fs.starfarer.api.combat.WeaponAPI;
 import com.fs.starfarer.api.ui.Fonts;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
@@ -18,35 +14,76 @@ import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static Shoey.RefitPlus.MainPlugin.*;
 
 
-public class CampaignRefitListener implements CampaignUIRenderingListener, CampaignInputListener, CoreUITabListener {
+public class CampaignRefitListener implements CoreUITabListener {
 
     Logger log = Global.getLogger(this.getClass());
     public boolean init;
-    public FleetMemberAPI RefitMember;
-    public boolean Cancel = false;
     public boolean Wait = false;
     public boolean WaitPrinted = false;
     public boolean RehookInCheck = false;
-    public static ShipAPI ship = null;
+    public ShipAPI ship = null;
     public static Refit RefitInstance = new Refit();
-    List<LabelAPI> tests = new ArrayList<>();
-    String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
+    public List<LabelAPI> labels = new ArrayList<>();
     public UIPanelAPI lastRefit;
+    public MutableShipStatsAPI stats;
+    public UIPanelAPI coreUI = null;
+    public UIPanelAPI refit = null;
+    public HashMap<String, String> LabelNameTiedValue = new HashMap<>();
+    public HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();
+    public List<String> LabelNames = Arrays.asList(new String[]{"Crew Loss", "DPS", ""});
+
+    void updateLabels()
+    {
+        ship = RefitInstance.getRefitShipAPI();
+        if (ship != null)
+        {
+            String label;
+            String value;
+            stats = ship.getMutableStats();
+            stats.getBallisticWeaponRangeBonus();
+
+            label = LabelNames.get(0);
+            value = ((float) (Math.round(stats.getCrewLossMult().getModifiedValue()*1000))/1000)+"x";
+            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label))
+            {
+                LabelNameTiedValue.put(label, value);
+                LabelAPI l = LabelNameTiedValueLabel.get(label);
+                l.setText(value);
+                l.autoSizeToWidth(l.computeTextWidth(value));
+            }
+            label = LabelNames.get(1);
+            float dps = 0;
+            for (WeaponAPI w : ship.getAllWeapons()) {
+                dps += w.getDamage().getStats().getBallisticWeaponDamageMult().getModifiedValue();
+            }
+            value = ""+Math.round(dps);
+            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label))
+            {
+                LabelNameTiedValue.put(label, value);
+                LabelAPI l = LabelNameTiedValueLabel.get(label);
+                l.setText(value);
+                l.autoSizeToWidth(l.computeTextWidth(value));
+            }
+        }
+    }
 
     void clearRefitVars()
     {
         refit = null;
         RefitHooked = false;
-        RefitMember = null;
     }
 
     void hookIfNeeded()
     {
+        if (KotlinWait)
+            return;
         KotlinWait = true;
         RefitInstance.getRefit(refit == null || !RefitHooked);
     }
@@ -60,8 +97,10 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
 
         if (RefitHooked && lastRefit != refit && refit != null) {
             try {
-                for (LabelAPI l : tests) {
-                    refit.removeComponent((UIComponentAPI) l);
+                for (LabelAPI l : labels) {
+                    refit.addComponent((UIComponentAPI) l);
+                }
+                for (LabelAPI l : LabelNameTiedValueLabel.values()) {
                     refit.addComponent((UIComponentAPI) l);
                 }
                 log.info("Added labels");
@@ -84,50 +123,21 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
         InsertOverlay("");
     }
 
-    void pingRefit(boolean rehook)
-    {
-        if (rehook || refit == null || !RefitHooked) {
-            RefitHooked = false;
-            RefitMember = null;
-        }
-        if (refit == null || !RefitHooked)
-        {
-            hookIfNeeded();
-        }
-
-        if (refit == null)
-            return;
-
-        RehookInCheck = false;
-        FleetMemberAPI current = RefitInstance.getRefitFleetMember();
-        if (current != RefitMember || rehook) {
-            RefitMember = current;
-            if (current != null) {
-                if (needOverlayPlacement)
-                    log.debug("Pre-overlay: Updated FM to " + RefitMember.getShipName());
-                else
-                    log.debug("Post-overlay: Updated FM to " + RefitMember.getShipName());
-                needOverlayPlacement = true;
-            }
-            else
-                log.info("Cleared previousFM");
-        }
-
-    }
-
-    void FrameChecks() {
+    void FrameChecks(float amount) {
 
         if (!init) {
             init = true;
             log.setLevel(logLevel);
-            LabelAPI ll = null;
-            for (String s : fonts) {
-                LabelAPI l = Global.getSettings().createLabel("The Game", s);
-                l.autoSizeToWidth(l.computeTextWidth(l.getText()));
-                if (ll != null)
-                    l.getPosition().aboveLeft((UIComponentAPI) ll, 0);
-                ll = l;
-                tests.add(l);
+            for (String s : LabelNames)
+            {
+                LabelAPI l = Global.getSettings().createLabel(s, Fonts.VICTOR_10);
+                labels.add(l);
+                if (labels.size() > 1)
+                    l.getPosition().rightOfMid((UIComponentAPI) labels.get(labels.size()-2), 1000);
+                log.debug(s+" x " +l.getPosition().getX() + " y " + l.getPosition().getY());
+                LabelAPI l2 = Global.getSettings().createLabel("", Fonts.ORBITRON_12);
+                l2.getPosition().aboveRight((UIComponentAPI) l, 0);
+                LabelNameTiedValueLabel.put(s, l);
             }
             log.debug("Campaign listener initialized");
         }
@@ -135,6 +145,7 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
         if (KotlinWait) {
             return;
         }
+
         if (sector == null || cUI == null || cUI.getCurrentCoreTab() != CoreUITabId.REFIT || Wait) {
             if (Wait)
             {
@@ -144,15 +155,11 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
                 }
                 RehookInCheck = true;
             }
-            Cancel = true;
             RefitHooked = false;
-            RefitMember = null;
             return;
         }
 
         WaitPrinted = false;
-        Cancel = false;
-        pingRefit(RehookInCheck);
 
         if (lastRefit != refit)
         {
@@ -163,60 +170,13 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
         if (needOverlayPlacement)
             InsertOverlay();
 
-    }
-
-    @Override
-    public void renderInUICoordsBelowUI(ViewportAPI viewport) {
-
-    }
-
-    @Override
-    public void renderInUICoordsAboveUIBelowTooltips(ViewportAPI viewport) {
-
-
-    }
-
-    @Override
-    public void renderInUICoordsAboveUIAndTooltips(ViewportAPI viewport) {
-
-    }
-
-    @Override
-    public int getListenerInputPriority() {
-        return 100;
-    }
-
-    @Override
-    public void processCampaignInputPreCore(List<InputEventAPI> events) {
-
-    }
-
-    @Override
-    public void processCampaignInputPreFleetControl(List<InputEventAPI> events) {
-
-    }
-
-    @Override
-    public void processCampaignInputPostCore(List<InputEventAPI> events) {
-
-        for (InputEventAPI e : events) {
-
-            if (Cancel)
-                return;
-
-            if (e.isConsumed())
-                continue;
-
-            if (e.getEventType() == InputEventType.MOUSE_DOWN) {
-                pingRefit(false);
-                return;
-            }
-        }
+        updateLabels();
 
     }
 
     @Override
     public void reportAboutToOpenCoreTab(CoreUITabId tab, Object param) {
+        RefitInstance.hookCore();
         if (tab != CoreUITabId.REFIT)
             return;
         log.debug("Clearing variables as opening prep");

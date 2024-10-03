@@ -4,7 +4,6 @@ import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -21,9 +20,11 @@ public class MainPlugin extends BaseModPlugin {
     public static boolean needOverlayPlacement = true;
     public static boolean KotlinWait = false;
 
-    public static CampaignRefitListener cRR;
+    public static CampaignRefitListener cRL;
 
-    public static UIPanelAPI refit = null;
+    public static int reflectionCount = 0;
+
+    public static String UIDump;
 
     @Override
     public void onApplicationLoad() throws Exception {
@@ -36,9 +37,9 @@ public class MainPlugin extends BaseModPlugin {
         super.onGameLoad(b);
         sector = Global.getSector();
         cUI = sector.getCampaignUI();
-        cRR = new CampaignRefitListener();
+        cRL = new CampaignRefitListener();
         sector.getListenerManager().removeListenerOfClass(CampaignRefitListener.class);
-        sector.getListenerManager().addListener(cRR, true);
+        sector.getListenerManager().addListener(cRL, true);
         sector.addTransientScript(new EveryFrameChecks());
     }
 

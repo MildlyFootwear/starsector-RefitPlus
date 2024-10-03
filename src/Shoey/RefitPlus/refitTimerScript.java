@@ -2,7 +2,7 @@ package Shoey.RefitPlus;
 
 import com.fs.starfarer.api.EveryFrameScript;
 
-import static Shoey.RefitPlus.MainPlugin.cRR;
+import static Shoey.RefitPlus.MainPlugin.cRL;
 
 public class refitTimerScript implements EveryFrameScript {
     boolean fin = false;
@@ -22,7 +22,7 @@ public class refitTimerScript implements EveryFrameScript {
     public void advance(float amount) {
         if (loopcount == 5)
         {
-            cRR.log.debug("Stopping monitor loop.");
+            cRL.log.debug("Stopping monitor loop.");
             fin = true;
             loopcount = 0;
             return;
@@ -31,7 +31,7 @@ public class refitTimerScript implements EveryFrameScript {
             refitShipSelecterTimer += amount;
         } else {
             loopcount++;
-            cRR.pingRefit(true);
+            CampaignRefitListener.RefitInstance.getRefit(true);
             fin = true;
         }
     }
