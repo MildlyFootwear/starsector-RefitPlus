@@ -6,7 +6,6 @@ import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
 import com.fs.starfarer.api.combat.MutableShipStatsAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
-import com.fs.starfarer.api.combat.WeaponAPI;
 import com.fs.starfarer.api.ui.Fonts;
 import com.fs.starfarer.api.ui.LabelAPI;
 import com.fs.starfarer.api.ui.UIComponentAPI;
@@ -28,7 +27,6 @@ public class CampaignRefitListener implements CoreUITabListener {
     public boolean Wait = false;
     public boolean WaitPrinted = false;
     public boolean RehookInCheck = false;
-    public ShipAPI ship = null;
     public static Refit RefitInstance = new Refit();
     public List<LabelAPI> labels = new ArrayList<>();
     public UIPanelAPI lastRefit;
@@ -37,42 +35,8 @@ public class CampaignRefitListener implements CoreUITabListener {
     public UIPanelAPI refit = null;
     public HashMap<String, String> LabelNameTiedValue = new HashMap<>();
     public HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();
-    public List<String> LabelNames = Arrays.asList(new String[]{"Crew Loss", "DPS", ""});
-
-    void updateLabels()
-    {
-        ship = RefitInstance.getRefitShipAPI();
-        if (ship != null)
-        {
-            String label;
-            String value;
-            stats = ship.getMutableStats();
-            stats.getBallisticWeaponRangeBonus();
-
-            label = LabelNames.get(0);
-            value = ((float) (Math.round(stats.getCrewLossMult().getModifiedValue()*1000))/1000)+"x";
-            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label))
-            {
-                LabelNameTiedValue.put(label, value);
-                LabelAPI l = LabelNameTiedValueLabel.get(label);
-                l.setText(value);
-                l.autoSizeToWidth(l.computeTextWidth(value));
-            }
-            label = LabelNames.get(1);
-            float dps = 0;
-            for (WeaponAPI w : ship.getAllWeapons()) {
-                dps += w.getDamage().getStats().getBallisticWeaponDamageMult().getModifiedValue();
-            }
-            value = ""+Math.round(dps);
-            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label))
-            {
-                LabelNameTiedValue.put(label, value);
-                LabelAPI l = LabelNameTiedValueLabel.get(label);
-                l.setText(value);
-                l.autoSizeToWidth(l.computeTextWidth(value));
-            }
-        }
-    }
+    public List<String> LabelNames = Arrays.asList("Crew Loss", "DPS", "");
+    public ShipAPI ship;
 
     void clearRefitVars()
     {
@@ -88,7 +52,7 @@ public class CampaignRefitListener implements CoreUITabListener {
         RefitInstance.getRefit(refit == null || !RefitHooked);
     }
 
-    void InsertOverlay(String s) {
+    public void InsertOverlay(String s) {
 
         if (!s.isEmpty())
             log.debug("Executing InsertOverlay from "+s);
@@ -118,7 +82,7 @@ public class CampaignRefitListener implements CoreUITabListener {
         }
     }
 
-    void InsertOverlay()
+    public void InsertOverlay()
     {
         InsertOverlay("");
     }
@@ -131,13 +95,11 @@ public class CampaignRefitListener implements CoreUITabListener {
             for (String s : LabelNames)
             {
                 LabelAPI l = Global.getSettings().createLabel(s, Fonts.VICTOR_10);
+                l.setColor(sector.getPlayerFaction().getBaseUIColor());
                 labels.add(l);
-                if (labels.size() > 1)
-                    l.getPosition().rightOfMid((UIComponentAPI) labels.get(labels.size()-2), 1000);
-                log.debug(s+" x " +l.getPosition().getX() + " y " + l.getPosition().getY());
-                LabelAPI l2 = Global.getSettings().createLabel("", Fonts.ORBITRON_12);
-                l2.getPosition().aboveRight((UIComponentAPI) l, 0);
-                LabelNameTiedValueLabel.put(s, l);
+
+                LabelAPI l2 = Global.getSettings().createLabel("", Fonts.ORBITRON_16);
+                LabelNameTiedValueLabel.put(s, l2);
             }
             log.debug("Campaign listener initialized");
         }
@@ -166,11 +128,6 @@ public class CampaignRefitListener implements CoreUITabListener {
             needOverlayPlacement = true;
             log.debug("lastRefit is not refit");
         }
-
-        if (needOverlayPlacement)
-            InsertOverlay();
-
-        updateLabels();
 
     }
 

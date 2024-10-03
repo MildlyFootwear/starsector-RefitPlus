@@ -299,7 +299,7 @@ class Refit {
                                     {
                                         log.debug(ui.toString()+" is "+cRL.labels.get(0))
                                         alreadyHooked(child3);
-                                        break;
+                                        return;
                                     }
                                 }
                             }
@@ -326,6 +326,7 @@ class Refit {
                             log.debug(UIDump);
                             UIDump = "dump";
                         }
+                        cRL.InsertOverlay()
 
                         RefitHooked = true
                     }
