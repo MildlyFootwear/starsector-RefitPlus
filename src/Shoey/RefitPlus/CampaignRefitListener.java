@@ -6,6 +6,7 @@ import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener;
 import com.fs.starfarer.api.campaign.listeners.CoreUITabListener;
+import com.fs.starfarer.api.combat.ShipAPI;
 import com.fs.starfarer.api.combat.ViewportAPI;
 import com.fs.starfarer.api.fleet.FleetMemberAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
@@ -31,6 +32,7 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     public boolean Wait = false;
     public boolean WaitPrinted = false;
     public boolean RehookInCheck = false;
+    public static ShipAPI ship = null;
     public static Refit RefitInstance = new Refit();
     List<LabelAPI> tests = new ArrayList<>();
     String[] fonts = new String[]{Fonts.INSIGNIA_LARGE, Fonts.INSIGNIA_VERY_LARGE, Fonts.ORBITRON_12, Fonts.VICTOR_10, Fonts.ORBITRON_20AA, Fonts.ORBITRON_20AABOLD};
@@ -47,15 +49,6 @@ public class CampaignRefitListener implements CampaignUIRenderingListener, Campa
     {
         KotlinWait = true;
         RefitInstance.getRefit(refit == null || !RefitHooked);
-        while (KotlinWait)
-        {
-            try {
-                log.debug("Kotlin waiting");
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-
-            }
-        }
     }
 
     void InsertOverlay(String s) {

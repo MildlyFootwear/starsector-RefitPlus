@@ -2,10 +2,8 @@ package Shoey.RefitPlus;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
 import com.fs.starfarer.api.campaign.SectorAPI;
-import com.fs.starfarer.api.combat.ShipAPI;
 import com.fs.starfarer.api.ui.UIPanelAPI;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -17,8 +15,6 @@ public class MainPlugin extends BaseModPlugin {
 
     public static SectorAPI sector = null;
     public static CampaignUIAPI cUI = null;
-    public static ShipAPI ship = null;
-    public static CampaignFleetAPI playerFleet = null;
     public static Level logLevel = Level.DEBUG;
 
     public static boolean RefitHooked;
@@ -40,7 +36,6 @@ public class MainPlugin extends BaseModPlugin {
         super.onGameLoad(b);
         sector = Global.getSector();
         cUI = sector.getCampaignUI();
-        playerFleet = sector.getPlayerFleet();
         cRR = new CampaignRefitListener();
         sector.getListenerManager().removeListenerOfClass(CampaignRefitListener.class);
         sector.getListenerManager().addListener(cRR, true);
