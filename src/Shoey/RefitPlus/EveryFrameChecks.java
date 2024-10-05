@@ -3,17 +3,17 @@ package Shoey.RefitPlus;
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
+import com.fs.starfarer.api.ui.LabelAPI;
 import org.apache.log4j.Logger;
 
 import static Shoey.RefitPlus.MainPlugin.*;
 
 public class EveryFrameChecks implements EveryFrameScript {
-    CoreUITabId last = null;
-    float KotlinTimer = 0;
-    int KotlinWaits = 0;
-    Thread RLUT = null;
-    Object lock;
     Logger log = Global.getLogger(this.getClass());
+    public static CoreUITabId last = null;
+    Thread RLUT = null;
+    public static boolean newFrame = false;
+
 
     int lastCount = 0;
     int frameCount = 0;
@@ -36,11 +36,18 @@ public class EveryFrameChecks implements EveryFrameScript {
     public void advance(float amount) {
         if (runTime == 0)
             log.setLevel(logLevel);
+        newFrame = true;
         runTime += amount;
+
         if (cUI.getCurrentCoreTab() != last)
         {
             last = cUI.getCurrentCoreTab();
-
+            RefitInstance.unhook();
+            if (last == CoreUITabId.REFIT) {
+                for (LabelAPI l : labels) {
+                    l.setColor(Global.getSettings().getBrightPlayerColor());
+                }
+            }
         }
 
         if (last == CoreUITabId.REFIT)
@@ -103,20 +110,5 @@ public class EveryFrameChecks implements EveryFrameScript {
 //            cRL.log.debug("\n\n\n\nEnding dump.\n\n\n\n");
 //
 //        }
-        cRL.FrameChecks(amount);
-        if (KotlinWait)
-        {
-            KotlinTimer += amount;
-            if (KotlinTimer > 0.1)
-            {
-                KotlinTimer = 0;
-                KotlinWaits++;
-                if (KotlinWaits > 4)
-                {
-                    KotlinWaits = 0;
-                    KotlinWait = false;
-                }
-            }
-        }
     }
 }

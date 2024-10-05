@@ -2,14 +2,11 @@
 
 package Shoey.RefitPlus.Kotlin
 
+import Shoey.RefitPlus.MainPlugin
 import Shoey.RefitPlus.MainPlugin.*
-import Shoey.RefitPlus.refitTimerScript
 import com.fs.starfarer.api.GameState
 import com.fs.starfarer.api.Global
 import com.fs.starfarer.api.campaign.CoreUITabId
-import com.fs.starfarer.api.campaign.listeners.CampaignInputListener
-import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener
-import com.fs.starfarer.api.combat.MutableShipStatsAPI
 import com.fs.starfarer.api.combat.ShipAPI
 import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.ui.*
@@ -24,115 +21,62 @@ import java.lang.invoke.MethodType
 class Refit {
 
     private var log = Global.getLogger(this.javaClass)
+    var core: Any? = null
+    var child1: Any? = null
+    var child2: Any? = null
+
     var s = ""
-    private fun hookFail()
-    {
-        KotlinWait = false
-        cRL.refit = null
-        RefitHooked = false
-        log.debug("Couldn't hook refit.")
-    }
-
-    private fun alreadyHooked(hookedRefit: UIPanelAPI)
-    {
-        cRL.lastRefit = hookedRefit
-        Global.getSector().removeScriptsOfClass(refitTimerScript().javaClass)
-        Global.getSector().addTransientScript(refitTimerScript())
-    }
-
-    fun hookCore()
-    {
-        log.level = logLevel
-
-        var state = AppDriver.getInstance().currentState
-        var core = invokeMethod("getCore", state)
-
-        var dialog = invokeMethod("getEncounterDialog", state)
-        if (dialog != null) {
-            core = invokeMethod("getCoreUI", dialog)
-        }
-
-        if (core is UIPanelAPI) {
-            cRL.coreUI = core
-        } else {
-            log.error("core is not valid")
-        }
-    }
 
     fun getRefitFleetMember(): FleetMemberAPI?
     {
-        if (logLevel == Level.DEBUG) {
-            reflectionCount++;
-        }
         try {
-            return invokeMethod("getMember", cRL.refit) as FleetMemberAPI
+            return invokeMethod("getMember", refit) as FleetMemberAPI
         } catch (e: Exception) {
             return null
         }
     }
 
+    var lastRefitChildrenGetShipPlace = 0
+
     fun getRefitShipAPI(): ShipAPI?
     {
-        if (logLevel == Level.DEBUG) {
-            reflectionCount++;
-        }
+        var ship: Any? = null
         try {
-            for (c: Any? in cRL.refit.getChildrenCopy())
+            var list = refit.getChildrenCopy()
+            if (lastRefitChildrenGetShipPlace < list.size && hasMethodOfName("getShip", list.get(lastRefitChildrenGetShipPlace)))
             {
-                if (c == null || !hasMethodOfName("getShip", c))
-                {
-                    continue;
+                ship = invokeMethod("getShip", list.get(lastRefitChildrenGetShipPlace))
+            }
+            if (ship !is ShipAPI) {
+                for (c: Any? in list) {
+                    if (c == null || !hasMethodOfName("getShip", c)) {
+                        continue
+                    }
+
+                    ship = invokeMethod("getShip", c)
+                    if (ship is ShipAPI) {
+                        timesNot++
+                        lastRefitChildrenGetShipPlace = list.indexOf(c)
+                        break
+                    }
                 }
-                var ship = invokeMethod("getShip", c)
-                if (ship is ShipAPI) {
-                    if (cRL.ship != ship)
-                        log.debug("Found "+ship)
-                    return ship
-                }
+            } else {
+                timesSkipped++
             }
         } catch (e: Exception) {
             log.debug("ShipAPI failsafe")
-            return cRL.ship
+            return null
         }
-        return cRL.ship
-    }
 
-    fun returnTypesString(subject: Any) : String
-    {
-        var returnValue = ""
+        if (ship is ShipAPI) {
+            if (MainPlugin.ship != ship) {
+                MainPlugin.ship = ship
+                log.debug("Found " + ship)
+            }
+            return ship
+        }
 
-        if (subject is UIPanelAPI)
-        {
-            returnValue += "UIPanelAPI:"
-        }
-        if (subject is UIComponentAPI)
-        {
-            returnValue += "UIComponentAPI:"
-        }
-        if (subject is ShipAPI)
-        {
-            returnValue += "ShipAPI:"
-        }
-        if (subject is FleetMemberAPI)
-        {
-            returnValue += "FleetMemberAPI:"
-        }
-        if (subject is MutableShipStatsAPI)
-        {
-            returnValue += "MutableShipStatsAPI:"
-        }
-        if (subject is CampaignInputListener)
-        {
-            returnValue += "CampaignInputListener:"
-        }
-        if (subject is CampaignUIRenderingListener)
-        {
-            returnValue += "CampaignUIRenderingListener:"
-        }
-        if (returnValue == "") {
-            returnValue = "Unknown"
-        }
-        return returnValue
+        return null
     }
 
     //Required to execute obfuscated methods without referencing their obfuscated class name.
@@ -146,7 +90,7 @@ class Refit {
         method = clazz.getMethod(methodName, *methodType.parameterArray())
         try {
             if (logLevel == Level.DEBUG) {
-                reflectionCount++;
+                reflectionCount++
             }
             return invokeMethodHandle.invoke(method, instance, arguments)
         } catch (e: Exception) {
@@ -162,179 +106,134 @@ class Refit {
         return invokeMethod("getChildrenCopy", instance) as List<Any?>
     }
 
-    fun dumpMethods(instance: Any, prefix: String, fromWithin: Boolean) {
-        val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
-        if (fromWithin)
-            s+="\n"+prefix+"Class: "+instance.javaClass.toString()
-        for (m: Any in instancesOfMethods)
-        {
-            var methodName = getMethodNameHandle.invoke(m) as String
-            s += "\n"+(prefix+"Method: "+methodName)
-            if (methodName.contains("get") && !fromWithin)
-            {
-                try {
-                    var invoked = invokeMethod(methodName, instance) as Any
-                    s += "\nReturns " + prefix + returnTypesString(invoked) + invoked.toString()
-                    if (methodName.contains("Listener")) {
-                        s += "\n"+prefix+"{"
-                        dumpMethods(invoked, "    " + prefix, true)
-                        s += "\n"+prefix+"}"
-
-                    }
-
-                } catch (e: Exception)
-                {
-
-                }
-            }
-        }
-
-    }
-
-    fun dumpMethods(instance: Any, prefix: String) {
-        dumpMethods(instance, prefix, false)
-    }
-
-
-    fun dumpDetails(list: List<Any?>, prefix: String)
+    private fun hookFail()
     {
-        try {
-            for (ui: Any? in list) {
-                if (ui == null)
-                    continue
-//                for (s: String in ReflectionUtils.getFieldsOfType(ui, String::class.java))
-//                {
-//                    UIDump += "\n"+("String: "+ui.toString()+": "+s+", "+(ReflectionUtils.get(s, ui) as String))
-//                }
-
-                dumpDetails(ui,prefix)
-            }
-        } catch (e: Exception)
-        {
-            UIDump += "\n"+("Couldn't dump.")
-        }
+        unhook()
+        log.debug("Couldn't hook refit.")
     }
 
-    fun dumpText(instance: Any, prefix: String)
+    private fun alreadyHooked(hookedRefit: UIPanelAPI)
     {
-        try {
-            if (hasMethodOfName("getText", instance)) {
-                s += "\n"+(prefix+"Text: " + (invokeMethod("getText", instance) as String?))
-            }
-        } catch (e: Exception)
-        {
-        }
 
     }
 
-
-    fun dumpDetails(instance: Any, prefix: String, recursive: Boolean) {
-        s = ""
-        try {
-            s += "\n" + (prefix + "Instance: " + instance)
-            s += "\n" + (prefix + "Class: " + instance.javaClass)
-            s += "\n" + (prefix + "Types: " + returnTypesString(instance))
-            dumpText(instance, prefix)
-            s += "\n" + (prefix) + "{"
-            dumpMethods(instance, "    " + prefix)
-            s += "\n" + (prefix) + "}"
-        } catch (e: Exception) {
-            TODO("Not yet implemented")
-        }
-        UIDump += s
-        if (recursive) {
-            var i = 0;
-            try {
-                i = getChildrenCopyFromHook(instance).size
-            } catch (e: Exception) {
-            }
-            if (i != 0) {
-                UIDump += "\n" + (prefix) + "{"
-                dumpDetails(getChildrenCopyFromHook(instance), "    " + prefix)
-                UIDump += "\n" + (prefix) + "}"
-            }
-        }
-    }
-
-    fun dumpDetails(instance: Any, prefix: String)
+    fun unhook()
     {
-        dumpDetails(instance, prefix, true)
+        core = null
+        child1 = null
+        child2 = null
     }
 
-    fun getRefit(reHook: Boolean) {
+    fun hookCore()
+    {
+        log.level = logLevel
+
+        var state = AppDriver.getInstance().currentState
+        var core2 = invokeMethod("getCore", state)
+
+        var dialog = invokeMethod("getEncounterDialog", state)
+        if (dialog != null) {
+            core2 = invokeMethod("getCoreUI", dialog)
+        }
+
+        if (core2 is UIPanelAPI) {
+            if (coreUI != core2) {
+                log.info("Newly hooked core: " + core2.toString())
+                child1 = null
+                child2 = null
+                refit = null
+            }
+            coreUI = core2
+            core = core2
+
+        } else {
+            log.error("core is not valid")
+        }
+    }
+
+    var lastChild1Index = 0
+
+    fun hookCoreChild1()
+    {
+        var currentList = coreUI.getChildrenCopy()
+        if (!hasMethodOfName("setBorderInsetLeft", currentList.get(lastChild1Index))) {
+            timesNot
+            child1 = currentList.find { hasMethodOfName("setBorderInsetLeft", it) }
+            var currentIndex = currentList.indexOf(child1)
+            if (currentIndex != lastChild1Index) {
+                lastChild1Index = currentIndex
+            }
+        } else {
+            timesSkipped++
+        }
+    }
+
+    fun hookCoreChild2()
+    {
+        var currentList = (child1 as UIPanelAPI).getChildrenCopy()
+        child2 = currentList.find { hasMethodOfName("goBackToParentIfNeeded", it) }
+    }
+
+    fun hookRefit() {
+        hookRefit(false)
+    }
+
+    fun hookRefit(reHook: Boolean) {
 
         if (Global.getSettings().currentState != GameState.CAMPAIGN || cUI == null || cUI.currentCoreTab != CoreUITabId.REFIT)
             return
 
         log.level = logLevel
 
-        if (reHook) {
-
-            if (cRL.coreUI is UIPanelAPI) {
-                var currentList = cRL.coreUI.getChildrenCopy()
-                var child1 = currentList.find { hasMethodOfName("setBorderInsetLeft", it) }
-                if (child1 is UIPanelAPI) {
-                    currentList = child1.getChildrenCopy()
-                    var child2 = currentList.find { hasMethodOfName("goBackToParentIfNeeded", it) }
-
-                    if (child2 is UIPanelAPI) {
-
-                        var refitParentChildrenCopy = child2.getChildrenCopy()
-                        var child3 = refitParentChildrenCopy.find { hasMethodOfName("syncWithCurrentVariant", it) }
-
-                        if (child3 !is UIPanelAPI) {
-                            hookFail()
-                            return
-                        }
-
-                        var refitChildren = child3.getChildrenCopy()
-
-                        try {
-                            for (ui: UIComponentAPI? in refitChildren) {
-                                if (ui == null)
-                                    continue
-                                if (ui is LabelAPI)
-                                {
-                                    if (ui.text == cRL.labels.get(0).text)
-                                    {
-                                        log.debug(ui.toString()+" is "+cRL.labels.get(0))
-                                        alreadyHooked(child3);
-                                        return;
-                                    }
-                                }
-                            }
-                        } catch (e: Exception)
-                        {
-                            log.error("Kotlin error caught in refitChildren")
-                            hookFail()
-                            return
-                        }
-                        log.info("Refit menu has " + refitChildren.count() + " components")
-                        cRL.refit = child3
-                        if (UIDump == "dump") {
-                            UIDump = "";
-                            var test = invokeMethod("getShipDisplay", cRL.refit);
-                            if (test is UIPanelAPI) {
-                                dumpDetails(test, "", true)
-                            }
-                            log.debug(UIDump);
-                            UIDump = "";
-                            test = invokeMethod("getDesignDisplay", cRL.refit);
-                            if (test is UIPanelAPI) {
-                                dumpDetails(test, "", true)
-                            }
-                            log.debug(UIDump);
-                            UIDump = "dump";
-                        }
-                        cRL.InsertOverlay()
-
-                        RefitHooked = true
-                    }
-                }
-            } else
-                log.error("Refit hook not successful because coreUI is not valid.")
+        if (core !is UIPanelAPI || reHook) {
+            hookCore()
         }
-        KotlinWait = false
+
+        if (core !is UIPanelAPI)
+        {
+            unhook()
+            log.error("Couldn't hook core.")
+            return
+        }
+
+        if (child1 !is UIPanelAPI || reHook)
+        {
+            hookCoreChild1()
+        }
+
+        if (child1 !is UIPanelAPI)
+        {
+            unhook()
+            log.error("Couldn't hook child1.")
+            return
+        }
+
+        if (child2 !is UIPanelAPI || reHook)
+        {
+            hookCoreChild2()
+        }
+
+        if (child2 !is UIPanelAPI)
+        {
+            unhook()
+            log.error("Couldn't hook child2.")
+            return
+        }
+
+        var refitParentChildrenCopy = (child2 as UIPanelAPI).getChildrenCopy()
+        var child3 = refitParentChildrenCopy.find { hasMethodOfName("syncWithCurrentVariant", it) }
+
+        if (child3 !is UIPanelAPI) {
+            hookFail()
+            return
+        }
+
+
+        if (refit == null || child3.getChildrenCopy() != refit.getChildrenCopy())
+        {
+            refit = child3
+            insertOverlay()
+        }
 
     }
 
@@ -346,7 +245,7 @@ class Refit {
     //Used to be able to find specific files without having to reference their obfuscated class name.
     private fun hasMethodOfName(name: String, instance: Any): Boolean {
         if (logLevel == Level.DEBUG) {
-            reflectionCount++;
+            reflectionCount++
         }
         val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
         return instancesOfMethods.any { getMethodNameHandle.invoke(it) == name }

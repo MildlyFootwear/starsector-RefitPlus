@@ -1,6 +1,6 @@
 package Shoey.RefitPlus;
 
-import Shoey.RefitPlus.Kotlin.Refit;
+import com.fs.starfarer.api.GameState;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
 import com.fs.starfarer.api.campaign.RepLevel;
@@ -8,7 +8,6 @@ import com.fs.starfarer.api.combat.MutableShipStatsAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
 import com.fs.starfarer.api.combat.WeaponAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
-import com.fs.starfarer.api.ui.UIComponentAPI;
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 
@@ -19,12 +18,18 @@ import static Shoey.RefitPlus.MainPlugin.*;
 
 public class RefitLabelUpdateThread implements Runnable {
 
+//
+// Doing reflections in a separate thread will not impact performance of the game.
+// Just need to implement appropriate logic to not let the thread run when not needed.
+//
+
+
     Logger log = Global.getLogger(this.getClass());
-    Refit RefitInstance = new Refit();
     float x = 250;
     float y = 0;
     List<String> knownHooks = new ArrayList<>();
-
+    int w = 0;
+    boolean needsTermination = false;
     public void updateStats()
     {
         ShipAPI ship = RefitInstance.getRefitShipAPI();
@@ -38,7 +43,7 @@ public class RefitLabelUpdateThread implements Runnable {
             MutableShipStatsAPI stats = ship.getMutableStats();
             stats.getBallisticWeaponRangeBonus();
 
-            label = cRL.LabelNames.get(0);
+            label = LabelNames.get(0);
             float temp = (float) (Math.round(stats.getCrewLossMult().getModifiedValue() * 100)) / 100;
             try {
                 value = ""+temp;
@@ -50,21 +55,21 @@ public class RefitLabelUpdateThread implements Runnable {
             } catch (Exception e) {
                 value = "You shouldn't see this.";
             }
-            if (!cRL.LabelNameTiedValue.containsKey(label) || value != cRL.LabelNameTiedValue.get(label)) {
-                cRL.LabelNameTiedValue.put(label, value);
-                LabelAPI l = cRL.LabelNameTiedValueLabel.get(label);
+            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
+                LabelNameTiedValue.put(label, value);
+                LabelAPI l = LabelNameTiedValueLabel.get(label);
 
                 if (temp < 1)
-                    l.setColor(sector.getPlayerFaction().getRelColor(RepLevel.COOPERATIVE));
+                    l.setColor(Global.getSettings().getColor("mountGreenColor"));
                 else if (temp > 1)
                     l.setColor(sector.getPlayerFaction().getRelColor(RepLevel.VENGEFUL));
                 else
-                    l.setColor(sector.getPlayerFaction().getRelColor(RepLevel.NEUTRAL));
+                    l.setColor(Global.getSettings().getColor("yellowTextColor"));
 
                 l.setText(value);
                 l.autoSizeToWidth(l.computeTextWidth(value));
             }
-            label = cRL.LabelNames.get(1);
+            label = LabelNames.get(1);
             float bDPS = 0;
             for (WeaponAPI w : ship.getAllWeapons()) {
                 MutableShipStatsAPI stat = w.getDamage().getStats();
@@ -75,10 +80,11 @@ public class RefitLabelUpdateThread implements Runnable {
                     bDPS += w.getDamage().getStats().getBallisticWeaponDamageMult().getModifiedValue();
                 }
             }
-            value = "" + Math.round(bDPS);
-            if (!cRL.LabelNameTiedValue.containsKey(label) || value != cRL.LabelNameTiedValue.get(label)) {
-                cRL.LabelNameTiedValue.put(label, value);
-                LabelAPI l = cRL.LabelNameTiedValueLabel.get(label);
+            value = "" + w;
+            w = 0;
+            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
+                LabelNameTiedValue.put(label, value);
+                LabelAPI l = LabelNameTiedValueLabel.get(label);
                 l.setText(value);
                 l.autoSizeToWidth(l.computeTextWidth(value));
             }
@@ -87,8 +93,6 @@ public class RefitLabelUpdateThread implements Runnable {
 
     public void updatePositions()
     {
-        cRL.labels.get(0).getPosition().inTR(265, 35);
-        cRL.LabelNameTiedValueLabel.get(cRL.LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) cRL.labels.get(0), 3);
         if (Keyboard.isKeyDown(Keyboard.KEY_NUMPAD8)) {
             y++;
             log.debug("y "+y);
@@ -108,23 +112,24 @@ public class RefitLabelUpdateThread implements Runnable {
     @Override
     public void run() {
         log.setLevel(logLevel);
-        while (cUI.getCurrentCoreTab() != CoreUITabId.REFIT) {
-            try {
-                Thread.sleep(10);
-                cRL.log.debug("Overlay Thread: waiting before ");
-            } catch (InterruptedException e) {
-            }
-        }
-        while (cUI.getCurrentCoreTab() == CoreUITabId.REFIT) {
-
+        timesSkipped = 0;
+        timesNot = 0;
+        while (GameState.CAMPAIGN == Global.getCurrentState() && EveryFrameChecks.last == CoreUITabId.REFIT && !needsTermination) {
+            EveryFrameChecks.newFrame = false;
+            RefitInstance.unhook();
+            RefitInstance.hookRefit();
             updateStats();
             updatePositions();
+            w = 0;
 
             try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
+                while (!EveryFrameChecks.newFrame && w < 300) {
+                    w++;
+                    Thread.sleep(1);
+                }
+            } catch (Exception e) {
             }
         }
-        cRL.log.debug("Overlay Thread: terminating");
+        log.debug("Overlay Thread: terminating. "+timesSkipped+" shortcuts taken vs "+timesNot);
     }
 }

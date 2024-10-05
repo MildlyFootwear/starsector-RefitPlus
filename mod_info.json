@@ -13,5 +13,16 @@
   "jars": [
     "jars/RefitPlus.jar"
   ],
-  "modPlugin": "Shoey.RefitPlus.MainPlugin"
+  "modPlugin": "Shoey.RefitPlus.MainPlugin",
+  "dependencies":
+  [
+    {
+      "id": "lw_lazylib",
+      "name": "LazyLib"
+    },
+    {
+      "id": "lunalib",
+      "name": "LunaLib"
+    }
+  ]
 }
