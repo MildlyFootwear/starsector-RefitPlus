@@ -43,7 +43,7 @@ class RPReflect {
         var ship: Any? = null
         try {
             var list = refit.getChildrenCopy()
-            if (lastRefitChildrenGetShipPlace < list.size && hasMethodOfName("getShip", list.get(lastRefitChildrenGetShipPlace)))
+            if (lastRefitChildrenGetShipPlace != -1 && lastRefitChildrenGetShipPlace < list.size && hasMethodOfName("getShip", list.get(lastRefitChildrenGetShipPlace)))
             {
                 ship = invokeMethod("getShip", list.get(lastRefitChildrenGetShipPlace))
             }
@@ -155,23 +155,48 @@ class RPReflect {
 
     fun hookCoreChild1()
     {
-        var currentList = coreUI.getChildrenCopy()
-        if (!hasMethodOfName("setBorderInsetLeft", currentList.get(lastChild1Index))) {
-            timesNot
-            child1 = currentList.find { hasMethodOfName("setBorderInsetLeft", it) }
-            var currentIndex = currentList.indexOf(child1)
+        var list = coreUI.getChildrenCopy()
+        var hm = false
+        try {
+            hm = hasMethodOfName("setBorderInsetLeft", list.get(lastChild1Index))
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
+        }
+        if (!hm) {
+            timesNot++
+            child1 = list.find { hasMethodOfName("setBorderInsetLeft", it) }
+            var currentIndex = list.indexOf(child1)
             if (currentIndex != lastChild1Index) {
                 lastChild1Index = currentIndex
             }
         } else {
+            child1 = list.get(lastChild1Index)
             timesSkipped++
         }
     }
 
+    var lastChild2Index = 0
+
     fun hookCoreChild2()
     {
-        var currentList = (child1 as UIPanelAPI).getChildrenCopy()
-        child2 = currentList.find { hasMethodOfName("goBackToParentIfNeeded", it) }
+        var list = (child1 as UIPanelAPI).getChildrenCopy()
+        var hm = false
+        try {
+            hm = hasMethodOfName("goBackToParentIfNeeded", list.get(lastChild2Index))
+        } catch (e: Exception) {
+            TODO("Not yet implemented")
+        }
+        if (!hm) {
+            timesNot++
+            child2 = list.find { hasMethodOfName("goBackToParentIfNeeded", it) }
+            var currentIndex = list.indexOf(child2)
+            if (currentIndex != lastChild2Index) {
+                lastChild2Index = currentIndex
+            }
+        } else {
+            child2 = list.get(lastChild2Index)
+            timesSkipped++
+        }
     }
 
     fun hookRefit() {
