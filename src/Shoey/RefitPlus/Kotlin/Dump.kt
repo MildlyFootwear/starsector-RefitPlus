@@ -1,22 +1,29 @@
 package Shoey.RefitPlus.Kotlin
 
 import Shoey.RefitPlus.MainPlugin.*
+import com.fs.starfarer.api.Global
 import com.fs.starfarer.api.campaign.listeners.CampaignInputListener
 import com.fs.starfarer.api.campaign.listeners.CampaignUIRenderingListener
 import com.fs.starfarer.api.combat.MutableShipStatsAPI
 import com.fs.starfarer.api.combat.ShipAPI
 import com.fs.starfarer.api.fleet.FleetMemberAPI
+import com.fs.starfarer.api.ui.ButtonAPI
+import com.fs.starfarer.api.ui.TooltipMakerAPI
 import com.fs.starfarer.api.ui.UIComponentAPI
 import com.fs.starfarer.api.ui.UIPanelAPI
+import com.fs.state.AppDriver
 import org.apache.log4j.Level
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 
 class Dump {
 
+    private var log = Global.getLogger(this.javaClass)
+
     var s = ""
     var UIDump = ""
-
+    var list: MutableList<UIPanelAPI> = mutableListOf()
+    var invokedRecursives: Int = 0
     fun returnTypesString(subject: Any) : String
     {
         var returnValue = ""
@@ -25,9 +32,16 @@ class Dump {
         {
             returnValue += "Boolean:"
         }
-        if (subject is Boolean)
+        if (subject is Int)
         {
-            returnValue += "Boolean:"
+            returnValue += "Int:"
+        }
+        if (subject is Double)
+        {
+            returnValue += "Double:"
+        }
+        if (subject is List<*>) {
+            returnValue += "List:"
         }
 
         if (subject is UIPanelAPI)
@@ -37,6 +51,18 @@ class Dump {
         if (subject is UIComponentAPI)
         {
             returnValue += "UIComponentAPI:"
+        }
+        if (subject is TooltipMakerAPI)
+        {
+            returnValue += "TooltipMakerAPI:"
+        }
+        if (subject is ButtonAPI)
+        {
+            returnValue += "ButtonAPI:"
+        }
+        if (subject is TooltipMakerAPI)
+        {
+            returnValue += "TooltipMakerAPI:"
         }
         if (subject is ShipAPI)
         {
@@ -64,18 +90,24 @@ class Dump {
         return returnValue
     }
 
-    fun dump(): String {
-        UIDump = ""
-        var test = invokeMethod("getShipDisplay", refit)
-        if (test is UIPanelAPI) {
-            dumpDetails(test, "", true)
+    fun hookCore(): UIPanelAPI?
+    {
+        var state = AppDriver.getInstance().currentState
+        var core2 = invokeMethod("getCore", state)
+
+        var dialog = invokeMethod("getEncounterDialog", state)
+        if (dialog != null) {
+            return invokeMethod("getCoreUI", dialog) as UIPanelAPI
         }
-        UIDump = ""
-        test = invokeMethod("getDesignDisplay", refit)
-        if (test is UIPanelAPI) {
-            dumpDetails(test, "", true)
-        }
-        return UIDump;
+        return null
+    }
+
+    fun dump(toDump: UIPanelAPI): String {
+        list.clear()
+        if (coreUI == null)
+            RPReflectInstance.hookCore()
+        dumpDetails(toDump, "", true)
+        return UIDump
     }
 
     fun dumpMethods(instance: Any, prefix: String, fromWithin: Boolean) {
@@ -86,12 +118,24 @@ class Dump {
         {
             var methodName = getMethodNameHandle.invoke(m) as String
             s += "\n"+(prefix+"Method: "+methodName)
-            if (methodName.startsWith("get") || methodName.startsWith("is") && !fromWithin)
+            if ((methodName.startsWith("get") || methodName.startsWith("is")) && !methodName.startsWith("getCoreUI"))
             {
                 try {
                     var invoked = invokeMethod(methodName, instance) as Any
-                    s += "\nReturns " + prefix + returnTypesString(invoked) + invoked.toString()
-                    if (methodName.contains("Listener")) {
+                    s += "\n" + prefix + "Returns "+returnTypesString(invoked) + invoked.toString()
+                    if (invoked is UIComponentAPI && !list.contains(invoked) && invokedRecursives < 10000 && !fromWithin)
+                    {
+                        if (invoked is UIPanelAPI && invoked.getChildrenCopy().contains(invoked))
+                        {
+
+                        } else {
+                            invokedRecursives++
+                            s += "\n" + prefix + "{"
+                            dumpDetails(invoked, "    " + prefix, false)
+                            s += "\n" + prefix + "}"
+                        }
+                    }
+                    if (methodName.contains("Listener") && !fromWithin) {
                         s += "\n"+prefix+"{"
                         dumpMethods(invoked, "    " + prefix, true)
                         s += "\n"+prefix+"}"
@@ -99,7 +143,7 @@ class Dump {
 
                 } catch (e: Exception)
                 {
-
+                    log.error(e.localizedMessage)
                 }
             }
         }
@@ -118,38 +162,58 @@ class Dump {
             }
         } catch (e: Exception)
         {
+            log.error(e.localizedMessage)
         }
 
     }
 
-    fun dumpDetails(instance: Any, prefix: String, recursive: Boolean) {
-        s = ""
+    fun dumpDetails(instance: Any, prefix: String, recursive: Boolean, skipMethod: Boolean) {
+        if (s.length > 10000) {
+            log.info("inserting "+s.length+" into "+UIDump.length)
+            UIDump += s
+            s = ""
+        }
+        var can: Boolean = false
         try {
             s += "\n" + (prefix + "Instance: " + instance)
             s += "\n" + (prefix + "Class: " + instance.javaClass)
             s += "\n" + (prefix + "Types: " + returnTypesString(instance))
+            if (list.contains(instance)) {
+                s += "\n" + prefix + "This panel has been dumped already"
+                return
+            }
             dumpText(instance, prefix)
-            s += "\n" + (prefix) + "{"
-            dumpMethods(instance, "    " + prefix)
-            s += "\n" + (prefix) + "}"
+            if (!skipMethod) {
+                s += "\n" + (prefix) + "{"
+                dumpMethods(instance, "    " + prefix, !recursive)
+                s += "\n" + (prefix) + "}"
+            }
         } catch (e: Exception) {
-            TODO("Not yet implemented")
+            can = true
+            s += "\n"+e.localizedMessage
         }
-        UIDump += s
-        if (recursive) {
-            var i = 0
-            try {
-                i = getChildrenCopyFromHook(instance).size
-            } catch (e: Exception) {
-            }
-            if (i != 0) {
-                UIDump += "\n" + (prefix) + "{"
-                dumpDetails(getChildrenCopyFromHook(instance), "    " + prefix)
-                UIDump += "\n" + (prefix) + "}"
+        if (recursive && !can) {
+            if (instance is UIPanelAPI) {
+                if (!list.contains(instance)) {
+                    s += "\n" + (prefix) + "{"
+                    for (c: UIComponentAPI in instance.getChildrenCopy())
+                    {
+                        dumpDetails(c, "    " + prefix, true)
+                    }
+                    s += "\n" + (prefix) + "}"
+                }
             }
         }
+        if (instance is UIPanelAPI)
+            {
+                list.add(list.size, instance)
+            }
+            UIDump += s
+        s = ""
     }
-
+    fun dumpDetails(instance: Any, prefix: String, recursive: Boolean) {
+        dumpDetails(instance, prefix, recursive, false)
+    }
     fun dumpDetails(instance: Any, prefix: String)
     {
         dumpDetails(instance, prefix, true)
@@ -165,9 +229,6 @@ class Dump {
 
         method = clazz.getMethod(methodName, *methodType.parameterArray())
         try {
-            if (logLevel == Level.DEBUG) {
-                reflectionCount++
-            }
             return invokeMethodHandle.invoke(method, instance, arguments)
         } catch (e: Exception) {
             return null

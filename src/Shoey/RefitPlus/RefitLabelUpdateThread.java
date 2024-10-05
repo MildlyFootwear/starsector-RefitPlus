@@ -116,7 +116,7 @@ public class RefitLabelUpdateThread implements Runnable {
         timesNot = 0;
         while (GameState.CAMPAIGN == Global.getCurrentState() && EveryFrameChecks.last == CoreUITabId.REFIT && !needsTermination) {
             EveryFrameChecks.newFrame = false;
-            RPReflectInstance.hookRefit();
+            RPReflectInstance.hookRefit(true);
             updateStats();
             updatePositions();
             w = 0;

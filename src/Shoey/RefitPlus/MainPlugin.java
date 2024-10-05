@@ -1,5 +1,6 @@
 package Shoey.RefitPlus;
 
+import Shoey.RefitPlus.Kotlin.Dump;
 import Shoey.RefitPlus.Kotlin.RPReflect;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
@@ -39,6 +40,7 @@ public class MainPlugin extends BaseModPlugin {
     public static ShipAPI ship;
     public static UIPanelAPI refit = null;
     public static UIPanelAPI coreUI = null;
+    public static Dump dump = new Dump();
 
     public static int timesSkipped = 0;
     public static int timesNot = 0;
