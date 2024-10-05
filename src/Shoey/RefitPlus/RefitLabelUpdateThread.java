@@ -119,7 +119,9 @@ public class RefitLabelUpdateThread implements Runnable {
             RPReflectInstance.hookRefit(true);
             updateStats();
             updatePositions();
+            System.out.println(w);
             w = 0;
+
 
             try {
                 while (!EveryFrameChecks.newFrame && w < 300) {
