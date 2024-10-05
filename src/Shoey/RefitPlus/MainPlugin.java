@@ -1,6 +1,6 @@
 package Shoey.RefitPlus;
 
-import Shoey.RefitPlus.Kotlin.Refit;
+import Shoey.RefitPlus.Kotlin.RPReflect;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CampaignUIAPI;
@@ -31,10 +31,7 @@ public class MainPlugin extends BaseModPlugin {
     public static boolean KotlinWait = false;
 
     public static int reflectionCount = 0;
-
-    public static String UIDump;
-
-    public static Refit RefitInstance = new Refit();
+    public static RPReflect RPReflectInstance = new RPReflect();
     public static List<LabelAPI> labels = new ArrayList<>();
     public static HashMap<String, String> LabelNameTiedValue = new HashMap<>();
     public static HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();

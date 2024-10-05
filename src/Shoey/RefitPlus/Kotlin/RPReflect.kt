@@ -18,7 +18,7 @@ import java.lang.invoke.MethodType
 
 
 @Suppress("unused")
-class Refit {
+class RPReflect {
 
     private var log = Global.getLogger(this.javaClass)
     var core: Any? = null

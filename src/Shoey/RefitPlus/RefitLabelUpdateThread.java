@@ -32,7 +32,7 @@ public class RefitLabelUpdateThread implements Runnable {
     boolean needsTermination = false;
     public void updateStats()
     {
-        ShipAPI ship = RefitInstance.getRefitShipAPI();
+        ShipAPI ship = RPReflectInstance.getRefitShipAPI();
         if (!knownHooks.contains(ship.getId())) {
             knownHooks.add(ship.getId());
             log.debug("ID found "+ship.getId());
@@ -116,8 +116,8 @@ public class RefitLabelUpdateThread implements Runnable {
         timesNot = 0;
         while (GameState.CAMPAIGN == Global.getCurrentState() && EveryFrameChecks.last == CoreUITabId.REFIT && !needsTermination) {
             EveryFrameChecks.newFrame = false;
-            RefitInstance.unhook();
-            RefitInstance.hookRefit();
+            RPReflectInstance.unhook();
+            RPReflectInstance.hookRefit();
             updateStats();
             updatePositions();
             w = 0;

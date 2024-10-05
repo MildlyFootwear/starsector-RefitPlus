@@ -42,7 +42,7 @@ public class EveryFrameChecks implements EveryFrameScript {
         if (cUI.getCurrentCoreTab() != last)
         {
             last = cUI.getCurrentCoreTab();
-            RefitInstance.unhook();
+            RPReflectInstance.unhook();
             if (last == CoreUITabId.REFIT) {
                 for (LabelAPI l : labels) {
                     l.setColor(Global.getSettings().getBrightPlayerColor());
@@ -75,14 +75,14 @@ public class EveryFrameChecks implements EveryFrameScript {
 //            }
 //        }
 //        if (Keyboard.isKeyDown(Keyboard.KEY_RCONTROL)) {
-//            CampaignRefitListener.RefitInstance.hookCore();
+//            CampaignRefitListener.RPReflectInstance.hookCore();
 //            cRL.log.debug("\n\n\n\nBeginning dump.\n\n\n\n");
 //            mouseX = Global.getSettings().getMouseX();
 //            UIDump = "";
 //            if (last != CoreUITabId.REFIT)
-//                CampaignRefitListener.RefitInstance.dumpDetails(coreUI, "");
+//                CampaignRefitListener.RPReflectInstance.dumpDetails(coreUI, "");
 //            else
-//                CampaignRefitListener.RefitInstance.dumpDetails(refit, "");
+//                CampaignRefitListener.RPReflectInstance.dumpDetails(refit, "");
 //
 //            String s;
 //
