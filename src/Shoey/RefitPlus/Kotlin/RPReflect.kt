@@ -160,7 +160,7 @@ class RPReflect {
         try {
             hm = hasMethodOfName("setBorderInsetLeft", list.get(lastChild1Index))
         } catch (e: Exception) {
-            TODO("Not yet implemented")
+
         }
         if (!hm) {
             timesNot++
@@ -184,7 +184,7 @@ class RPReflect {
         try {
             hm = hasMethodOfName("goBackToParentIfNeeded", list.get(lastChild2Index))
         } catch (e: Exception) {
-            TODO("Not yet implemented")
+
         }
         if (!hm) {
             timesNot++
