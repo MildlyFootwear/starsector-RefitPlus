@@ -138,7 +138,7 @@ class RPReflect {
 
         if (core2 is UIPanelAPI) {
             if (coreUI != core2) {
-                log.info("Newly hooked core: " + core2.toString())
+                log.debug("Newly hooked core: " + core2.toString())
                 child1 = null
                 child2 = null
                 refit = null
