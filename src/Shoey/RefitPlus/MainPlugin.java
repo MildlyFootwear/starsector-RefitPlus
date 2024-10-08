@@ -1,6 +1,5 @@
 package Shoey.RefitPlus;
 
-import Shoey.RefitPlus.Kotlin.Dump;
 import Shoey.RefitPlus.Kotlin.RPReflect;
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
@@ -27,38 +26,31 @@ public class MainPlugin extends BaseModPlugin {
     public static SectorAPI sector = null;
     public static CampaignUIAPI cUI = null;
     public static Level logLevel = Level.DEBUG;
-
-    public static boolean needOverlayPlacement = true;
-    public static boolean KotlinWait = false;
-
-    public static int reflectionCount = 0;
     public static RPReflect RPReflectInstance = new RPReflect();
     public static List<LabelAPI> labels = new ArrayList<>();
     public static HashMap<String, String> LabelNameTiedValue = new HashMap<>();
     public static HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();
-    public static List<String> LabelNames = Arrays.asList("Crew Loss", "DPS", "");
+    public static List<String> LabelNames = Arrays.asList("Crew Loss", "Recoverable");
     public static ShipAPI ship;
     public static UIPanelAPI refit = null;
     public static UIPanelAPI coreUI = null;
-    public static Dump dump = new Dump();
+    public static RefitOverlay rO = new RefitOverlay();
 
     public static int timesSkipped = 0;
     public static int timesNot = 0;
 
     public static void insertOverlay()
     {
-
-        LabelNameTiedValue.clear();
-
         for (LabelAPI l : labels) {
             refit.addComponent((UIComponentAPI) l);
         }
         for (LabelAPI l : LabelNameTiedValueLabel.values()) {
             refit.addComponent((UIComponentAPI) l);
         }
-
-        labels.get(0).getPosition().inTR(265, 35);
-        LabelNameTiedValueLabel.get(LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) labels.get(0), 1);
+        labels.get(0).getPosition().inTR(350, 35);
+        LabelNameTiedValueLabel.get(LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) labels.get(0), 2);
+        labels.get(1).getPosition().inTR(265, 35);
+        LabelNameTiedValueLabel.get(LabelNames.get(1)).getPosition().belowRight((UIComponentAPI) labels.get(1), 2);
     }
 
     @Override
@@ -72,9 +64,10 @@ public class MainPlugin extends BaseModPlugin {
             LabelAPI l = Global.getSettings().createLabel(s, Fonts.VICTOR_10);
             labels.add(l);
 
-            LabelAPI l2 = Global.getSettings().createLabel("", "graphics/fonts/orbitron16.fnt");
+            LabelAPI l2 = Global.getSettings().createLabel("", "graphics/fonts/orbitron20aabold.fnt");
             LabelNameTiedValueLabel.put(s, l2);
         }
+
     }
 
     @Override

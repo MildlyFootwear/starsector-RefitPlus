@@ -3,10 +3,8 @@ package Shoey.RefitPlus;
 import com.fs.starfarer.api.GameState;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
-import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.combat.MutableShipStatsAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
-import com.fs.starfarer.api.combat.WeaponAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Keyboard;
@@ -30,64 +28,77 @@ public class RefitLabelUpdateThread implements Runnable {
     List<String> knownHooks = new ArrayList<>();
     int w = 0;
     boolean needsTermination = false;
+    ShipAPI ship;
+    MutableShipStatsAPI stats;
+
+    String label;
+    String value;
+
+    void UpdateCrew()
+    {
+        label = LabelNames.get(0);
+        float temp = (float) (Math.round(stats.getCrewLossMult().getModifiedValue() * 100)) / 100;
+        try {
+            value = ""+temp;
+            while (value.length() < 4)
+            {
+                value += "0";
+            }
+            value += "x";
+        } catch (Exception e) {
+            value = "You shouldn't see this.";
+        }
+        if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
+            LabelNameTiedValue.put(label, value);
+            LabelAPI l = LabelNameTiedValueLabel.get(label);
+
+            if (temp < 1)
+                l.setColor(Global.getSettings().getColor("mountGreenColor"));
+            else if (temp > 1)
+                l.setColor(Global.getSettings().getColor("mountOrangeColor"));
+            else
+                l.setColor(Global.getSettings().getColor("yellowTextColor"));
+
+            l.setText(value);
+            l.autoSizeToWidth(l.computeTextWidth(value));
+        }
+    }
+
+    void UpdateRecovery()
+    {
+        label = LabelNames.get(1);
+        int temp =(100-(Math.round(stats.getBreakProb().getModifiedValue()*100)));
+        value = ""+temp;
+        value += "%";
+
+        if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
+            LabelNameTiedValue.put(label, value);
+            LabelAPI l = LabelNameTiedValueLabel.get(label);
+            l.setText(value);
+            l.autoSizeToWidth(l.computeTextWidth(value));
+            if (temp == 100)
+                l.setColor(Global.getSettings().getColor("mountGreenColor"));
+            else if (temp > 75)
+                l.setColor(Global.getSettings().getColor("yellowTextColor"));
+            else
+                l.setColor(Global.getSettings().getColor("mountOrangeColor"));
+        }
+
+    }
+
     public void updateStats()
     {
-        ShipAPI ship = RPReflectInstance.getRefitShipAPI();
-        if (!knownHooks.contains(ship.getId())) {
-            knownHooks.add(ship.getId());
-            log.debug("ID found "+ship.getId());
-        }
+        ship = RPReflectInstance.getRefitShipAPI();
         if (ship != null) {
-            String label;
-            String value;
-            MutableShipStatsAPI stats = ship.getMutableStats();
-            stats.getBallisticWeaponRangeBonus();
+            if (!knownHooks.contains(ship.getId())) {
+                knownHooks.add(ship.getId());
+                log.debug("ID found "+ship.getId());
+            }
 
-            label = LabelNames.get(0);
-            float temp = (float) (Math.round(stats.getCrewLossMult().getModifiedValue() * 100)) / 100;
-            try {
-                value = ""+temp;
-                while (value.length() < 4)
-                {
-                    value += "0";
-                }
-                value += "x";
-            } catch (Exception e) {
-                value = "You shouldn't see this.";
-            }
-            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
-                LabelNameTiedValue.put(label, value);
-                LabelAPI l = LabelNameTiedValueLabel.get(label);
+            stats = ship.getMutableStats();
+            UpdateCrew();
+            UpdateRecovery();
 
-                if (temp < 1)
-                    l.setColor(Global.getSettings().getColor("mountGreenColor"));
-                else if (temp > 1)
-                    l.setColor(sector.getPlayerFaction().getRelColor(RepLevel.VENGEFUL));
-                else
-                    l.setColor(Global.getSettings().getColor("yellowTextColor"));
-
-                l.setText(value);
-                l.autoSizeToWidth(l.computeTextWidth(value));
-            }
-            label = LabelNames.get(1);
-            float bDPS = 0;
-            for (WeaponAPI w : ship.getAllWeapons()) {
-                MutableShipStatsAPI stat = w.getDamage().getStats();
-                if (stat == null) {
-                    continue;
-                }
-                if (stat.getBallisticWeaponDamageMult() != null) {
-                    bDPS += w.getDamage().getStats().getBallisticWeaponDamageMult().getModifiedValue();
-                }
-            }
-            value = "" + w;
-            w = 0;
-            if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
-                LabelNameTiedValue.put(label, value);
-                LabelAPI l = LabelNameTiedValueLabel.get(label);
-                l.setText(value);
-                l.autoSizeToWidth(l.computeTextWidth(value));
-            }
         }
     }
 
@@ -119,7 +130,6 @@ public class RefitLabelUpdateThread implements Runnable {
             RPReflectInstance.hookRefit(true);
             updateStats();
             updatePositions();
-            System.out.println(w);
             w = 0;
 
 

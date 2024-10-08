@@ -12,7 +12,6 @@ import com.fs.starfarer.api.fleet.FleetMemberAPI
 import com.fs.starfarer.api.ui.*
 import com.fs.state.AppDriver
 import lunalib.lunaExtensions.*
-import org.apache.log4j.Level
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 
@@ -89,9 +88,6 @@ class RPReflect {
 
         method = clazz.getMethod(methodName, *methodType.parameterArray())
         try {
-            if (logLevel == Level.DEBUG) {
-                reflectionCount++
-            }
             return invokeMethodHandle.invoke(method, instance, arguments)
         } catch (e: Exception) {
             return null
@@ -120,6 +116,7 @@ class RPReflect {
     fun unhook()
     {
         core = null
+        coreUI = null
         child1 = null
         child2 = null
     }
@@ -269,9 +266,6 @@ class RPReflect {
 
     //Used to be able to find specific files without having to reference their obfuscated class name.
     private fun hasMethodOfName(name: String, instance: Any): Boolean {
-        if (logLevel == Level.DEBUG) {
-            reflectionCount++
-        }
         val instancesOfMethods: Array<out Any> = instance.javaClass.getDeclaredMethods()
         return instancesOfMethods.any { getMethodNameHandle.invoke(it) == name }
     }
