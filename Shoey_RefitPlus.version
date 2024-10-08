@@ -1,7 +1,7 @@
 {
-  "masterVersionFile": "https://raw.githubusercontent.com/",
+  "masterVersionFile": "https://raw.githubusercontent.com/MildlyFootwear/starsector-RefitPlus/refs/heads/master/Shoey_RefitPlus.version",
 
-  "modName": "",
+  "modName": "RefitPlus",
   "modVersion":
     {
       "major": 0,

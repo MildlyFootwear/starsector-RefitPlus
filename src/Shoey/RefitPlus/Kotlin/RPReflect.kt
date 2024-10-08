@@ -108,11 +108,6 @@ class RPReflect {
         log.debug("Couldn't hook refit.")
     }
 
-    private fun alreadyHooked(hookedRefit: UIPanelAPI)
-    {
-
-    }
-
     fun unhook()
     {
         core = null
@@ -251,10 +246,10 @@ class RPReflect {
         }
 
 
-        if (refit == null || child3.getChildrenCopy() != refit.getChildrenCopy())
+        if (refit == null || (child3 as UIPanelAPI).getChildrenCopy() != refit.getChildrenCopy())
         {
-            refit = child3
-            insertOverlay()
+            refit = child3 as UIPanelAPI
+            insertOverlay(child3 as UIPanelAPI)
         }
 
     }

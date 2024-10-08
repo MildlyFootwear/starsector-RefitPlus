@@ -39,13 +39,13 @@ public class MainPlugin extends BaseModPlugin {
     public static int timesSkipped = 0;
     public static int timesNot = 0;
 
-    public static void insertOverlay()
+    public static void insertOverlay(UIPanelAPI uip)
     {
         for (LabelAPI l : labels) {
-            refit.addComponent((UIComponentAPI) l);
+            uip.addComponent((UIComponentAPI) l);
         }
         for (LabelAPI l : LabelNameTiedValueLabel.values()) {
-            refit.addComponent((UIComponentAPI) l);
+            uip.addComponent((UIComponentAPI) l);
         }
         labels.get(0).getPosition().inTR(350, 35);
         LabelNameTiedValueLabel.get(LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) labels.get(0), 2);
