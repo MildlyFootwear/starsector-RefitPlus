@@ -129,7 +129,11 @@ class RPReflect {
 
     fun hookCoreChild1()
     {
-        var list = coreUI.getChildrenCopy()
+        var list = try {
+            coreUI.getChildrenCopy()
+        } catch (e: Exception) {
+            return
+        }
         var hm = false
         try {
             hm = hasMethodOfName("setBorderInsetLeft", list.get(lastChild1Index))
@@ -153,7 +157,11 @@ class RPReflect {
 
     fun hookCoreChild2()
     {
-        var list = (coreUIChild1 as UIPanelAPI).getChildrenCopy()
+        var list = try {
+            (coreUIChild1 as UIPanelAPI).getChildrenCopy()
+        } catch (e: Exception) {
+            return;
+        }
         var hm = false
         try {
             hm = hasMethodOfName("goBackToParentIfNeeded", list.get(lastChild2Index))
@@ -181,11 +189,13 @@ class RPReflect {
         log.level = logLevel
 
         if (!coreUI.getChildrenCopy().contains(coreUIChild1)) {
+            log.debug("Rehooking child 1")
             hookCoreChild1()
             return
         }
 
         if (!coreUIChild1.getChildrenCopy().contains(coreUIChild2)) {
+            log.debug("Rehooking child 2")
             hookCoreChild2()
             return
         }
