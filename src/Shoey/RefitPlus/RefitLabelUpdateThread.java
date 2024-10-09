@@ -3,6 +3,7 @@ package Shoey.RefitPlus;
 import com.fs.starfarer.api.GameState;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.CoreUITabId;
+import com.fs.starfarer.api.campaign.RepLevel;
 import com.fs.starfarer.api.combat.MutableShipStatsAPI;
 import com.fs.starfarer.api.combat.ShipAPI;
 import com.fs.starfarer.api.ui.LabelAPI;
@@ -51,7 +52,6 @@ public class RefitLabelUpdateThread implements Runnable {
         if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
             LabelNameTiedValue.put(label, value);
             LabelAPI l = LabelNameTiedValueLabel.get(label);
-
             if (temp < 1)
                 l.setColor(Global.getSettings().getColor("mountGreenColor"));
             else if (temp > 1)
@@ -76,12 +76,13 @@ public class RefitLabelUpdateThread implements Runnable {
             LabelAPI l = LabelNameTiedValueLabel.get(label);
             l.setText(value);
             l.autoSizeToWidth(l.computeTextWidth(value));
+
             if (temp == 100)
                 l.setColor(Global.getSettings().getColor("mountGreenColor"));
             else if (temp > 75)
                 l.setColor(Global.getSettings().getColor("yellowTextColor"));
             else
-                l.setColor(Global.getSettings().getColor("mountOrangeColor"));
+                l.setColor(Global.getSector().getPlayerFaction().getRelColor(RepLevel.VENGEFUL));
         }
 
     }
@@ -90,10 +91,6 @@ public class RefitLabelUpdateThread implements Runnable {
     {
         ship = RPReflectInstance.getRefitShipAPI();
         if (ship != null) {
-            if (!knownHooks.contains(ship.getId())) {
-                knownHooks.add(ship.getId());
-                log.debug("ID found "+ship.getId());
-            }
 
             stats = ship.getMutableStats();
             UpdateCrew();
@@ -127,7 +124,7 @@ public class RefitLabelUpdateThread implements Runnable {
         timesNot = 0;
         while (GameState.CAMPAIGN == Global.getCurrentState() && EveryFrameChecks.last == CoreUITabId.REFIT && !needsTermination) {
             EveryFrameChecks.newFrame = false;
-            RPReflectInstance.hookRefit(true);
+            RPReflectInstance.hookRefit();
             updateStats();
             updatePositions();
             w = 0;

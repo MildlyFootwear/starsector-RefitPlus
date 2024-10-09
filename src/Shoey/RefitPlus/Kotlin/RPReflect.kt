@@ -20,9 +20,6 @@ import java.lang.invoke.MethodType
 class RPReflect {
 
     private var log = Global.getLogger(this.javaClass)
-    var core: Any? = null
-    var child1: Any? = null
-    var child2: Any? = null
 
     var s = ""
 
@@ -102,41 +99,26 @@ class RPReflect {
         return invokeMethod("getChildrenCopy", instance) as List<Any?>
     }
 
-    private fun hookFail()
-    {
-        unhook()
-        log.debug("Couldn't hook refit.")
-    }
-
-    fun unhook()
-    {
-        core = null
-        coreUI = null
-        child1 = null
-        child2 = null
-    }
-
     fun hookCore()
     {
         log.level = logLevel
 
         var state = AppDriver.getInstance().currentState
-        var core2 = invokeMethod("getCore", state)
+        var core = invokeMethod("getCore", state)
 
         var dialog = invokeMethod("getEncounterDialog", state)
         if (dialog != null) {
-            core2 = invokeMethod("getCoreUI", dialog)
+            core = invokeMethod("getCoreUI", dialog)
         }
 
-        if (core2 is UIPanelAPI) {
-            if (coreUI != core2) {
-                log.debug("Newly hooked core: " + core2.toString())
-                child1 = null
-                child2 = null
+        if (core is UIPanelAPI) {
+            if (coreUI != core) {
+                log.debug("Newly hooked core: " + core.toString())
+                coreUIChild1 = null
+                coreUIChild2 = null
                 refit = null
             }
-            coreUI = core2
-            core = core2
+            coreUI = core
 
         } else {
             log.error("core is not valid")
@@ -156,13 +138,13 @@ class RPReflect {
         }
         if (!hm) {
             timesNot++
-            child1 = list.find { hasMethodOfName("setBorderInsetLeft", it) }
-            var currentIndex = list.indexOf(child1)
+            coreUIChild1 = list.find { hasMethodOfName("setBorderInsetLeft", it) } as UIPanelAPI
+            var currentIndex = list.indexOf(coreUIChild1)
             if (currentIndex != lastChild1Index) {
                 lastChild1Index = currentIndex
             }
         } else {
-            child1 = list.get(lastChild1Index)
+            coreUIChild1 = list.get(lastChild1Index) as UIPanelAPI
             timesSkipped++
         }
     }
@@ -171,7 +153,7 @@ class RPReflect {
 
     fun hookCoreChild2()
     {
-        var list = (child1 as UIPanelAPI).getChildrenCopy()
+        var list = (coreUIChild1 as UIPanelAPI).getChildrenCopy()
         var hm = false
         try {
             hm = hasMethodOfName("goBackToParentIfNeeded", list.get(lastChild2Index))
@@ -180,76 +162,46 @@ class RPReflect {
         }
         if (!hm) {
             timesNot++
-            child2 = list.find { hasMethodOfName("goBackToParentIfNeeded", it) }
-            var currentIndex = list.indexOf(child2)
+            coreUIChild2 = list.find { hasMethodOfName("goBackToParentIfNeeded", it) } as UIPanelAPI
+            var currentIndex = list.indexOf(coreUIChild2)
             if (currentIndex != lastChild2Index) {
                 lastChild2Index = currentIndex
             }
         } else {
-            child2 = list.get(lastChild2Index)
+            coreUIChild2 = list.get(lastChild2Index) as UIPanelAPI
             timesSkipped++
         }
     }
 
     fun hookRefit() {
-        hookRefit(false)
-    }
-
-    fun hookRefit(reHook: Boolean) {
 
         if (Global.getSettings().currentState != GameState.CAMPAIGN || cUI == null || cUI.currentCoreTab != CoreUITabId.REFIT)
             return
 
         log.level = logLevel
 
-        if (core !is UIPanelAPI || reHook) {
-            hookCore()
-        }
-
-        if (core !is UIPanelAPI)
-        {
-            unhook()
-            log.error("Couldn't hook core.")
-            return
-        }
-
-        if (child1 !is UIPanelAPI || reHook)
-        {
+        if (!coreUI.getChildrenCopy().contains(coreUIChild1)) {
             hookCoreChild1()
-        }
-
-        if (child1 !is UIPanelAPI)
-        {
-            unhook()
-            log.error("Couldn't hook child1.")
             return
         }
 
-        if (child2 !is UIPanelAPI || reHook)
-        {
+        if (!coreUIChild1.getChildrenCopy().contains(coreUIChild2)) {
             hookCoreChild2()
-        }
-
-        if (child2 !is UIPanelAPI)
-        {
-            unhook()
-            log.error("Couldn't hook child2.")
             return
         }
 
-        var refitParentChildrenCopy = (child2 as UIPanelAPI).getChildrenCopy()
+        var refitParentChildrenCopy = coreUIChild2.getChildrenCopy()
         var child3 = refitParentChildrenCopy.find { hasMethodOfName("syncWithCurrentVariant", it) }
 
         if (child3 !is UIPanelAPI) {
-            hookFail()
             return
         }
 
 
-        if (refit == null || (child3 as UIPanelAPI).getChildrenCopy() != refit.getChildrenCopy())
+        if (refit == null || child3.getChildrenCopy() != refit.getChildrenCopy())
         {
-            refit = child3 as UIPanelAPI
-            insertOverlay(child3 as UIPanelAPI)
+            refit = child3
+            insertOverlay(refit)
         }
 
     }

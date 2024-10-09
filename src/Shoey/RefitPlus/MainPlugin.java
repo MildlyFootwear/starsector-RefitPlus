@@ -32,8 +32,10 @@ public class MainPlugin extends BaseModPlugin {
     public static HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();
     public static List<String> LabelNames = Arrays.asList("Crew Loss", "Recoverable");
     public static ShipAPI ship;
-    public static UIPanelAPI refit = null;
     public static UIPanelAPI coreUI = null;
+    public static UIPanelAPI coreUIChild1 = null;
+    public static UIPanelAPI coreUIChild2 = null;
+    public static UIPanelAPI refit = null;
     public static RefitOverlay rO = new RefitOverlay();
 
     public static int timesSkipped = 0;

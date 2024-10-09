@@ -42,7 +42,7 @@ public class EveryFrameChecks implements EveryFrameScript {
         if (cUI.getCurrentCoreTab() != last)
         {
             last = cUI.getCurrentCoreTab();
-            RPReflectInstance.unhook();
+            RPReflectInstance.hookCore();
             if (last == CoreUITabId.REFIT) {
                 for (LabelAPI l : labels) {
                     l.setColor(Global.getSettings().getBrightPlayerColor());
