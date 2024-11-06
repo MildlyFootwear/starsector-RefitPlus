@@ -49,9 +49,9 @@ public class MainPlugin extends BaseModPlugin {
         for (LabelAPI l : LabelNameTiedValueLabel.values()) {
             uip.addComponent((UIComponentAPI) l);
         }
-        labels.get(0).getPosition().inTR(350, 35);
+        labels.get(0).getPosition().inTR(265, -1);
         LabelNameTiedValueLabel.get(LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) labels.get(0), 2);
-        labels.get(1).getPosition().inTR(265, 35);
+        labels.get(1).getPosition().inTR(350, -1);
         LabelNameTiedValueLabel.get(LabelNames.get(1)).getPosition().belowRight((UIComponentAPI) labels.get(1), 2);
     }
 

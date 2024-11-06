@@ -49,6 +49,11 @@ public class RefitLabelUpdateThread implements Runnable {
         } catch (Exception e) {
             value = "You shouldn't see this.";
         }
+
+        if (ship.getFleetMember().getMinCrew() == 0) {
+            value = "N/A";
+            temp = 1;
+        }
         if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
             LabelNameTiedValue.put(label, value);
             LabelAPI l = LabelNameTiedValueLabel.get(label);

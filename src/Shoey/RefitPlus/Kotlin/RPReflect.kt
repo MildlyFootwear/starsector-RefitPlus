@@ -211,7 +211,11 @@ class RPReflect {
         if (refit == null || child3.getChildrenCopy() != refit.getChildrenCopy())
         {
             refit = child3
-            insertOverlay(refit)
+            var child4 = child3.getChildrenCopy().find { hasMethodOfName("getColorFor", it) } as UIPanelAPI?
+
+            if (child4 is UIPanelAPI) {
+                insertOverlay(child4)
+            }
         }
 
     }
