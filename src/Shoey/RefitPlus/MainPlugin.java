@@ -14,7 +14,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,13 +29,12 @@ public class MainPlugin extends BaseModPlugin {
     public static List<LabelAPI> labels = new ArrayList<>();
     public static HashMap<String, String> LabelNameTiedValue = new HashMap<>();
     public static HashMap<String, LabelAPI> LabelNameTiedValueLabel = new HashMap<>();
-    public static List<String> LabelNames = Arrays.asList("Crew Loss", "Recoverable");
+    public static List<String> LabelNames = new ArrayList<>();
     public static ShipAPI ship;
     public static UIPanelAPI coreUI = null;
     public static UIPanelAPI coreUIChild1 = null;
     public static UIPanelAPI coreUIChild2 = null;
     public static UIPanelAPI refit = null;
-    public static RefitOverlay rO = new RefitOverlay();
 
     public static int timesSkipped = 0;
     public static int timesNot = 0;
@@ -51,6 +49,8 @@ public class MainPlugin extends BaseModPlugin {
         }
         labels.get(0).getPosition().inTR(265, -1);
         LabelNameTiedValueLabel.get(LabelNames.get(0)).getPosition().belowRight((UIComponentAPI) labels.get(0), 2);
+        if (labels.size() < 2)
+            return;
         labels.get(1).getPosition().inTR(350, -1);
         LabelNameTiedValueLabel.get(LabelNames.get(1)).getPosition().belowRight((UIComponentAPI) labels.get(1), 2);
     }
@@ -60,7 +60,8 @@ public class MainPlugin extends BaseModPlugin {
 
         super.onApplicationLoad();
         log.setLevel(logLevel);
-        Global.getSettings().loadFont("graphics/fonts/orbitron16.fnt");
+        LabelNames.add("Crew Loss");
+//        LabelNames.add("Recoverable");
         for (String s : LabelNames)
         {
             LabelAPI l = Global.getSettings().createLabel(s, Fonts.VICTOR_10);

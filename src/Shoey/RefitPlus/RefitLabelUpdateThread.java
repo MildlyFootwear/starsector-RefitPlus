@@ -10,9 +10,6 @@ import com.fs.starfarer.api.ui.LabelAPI;
 import org.apache.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static Shoey.RefitPlus.MainPlugin.*;
 
 public class RefitLabelUpdateThread implements Runnable {
@@ -26,7 +23,6 @@ public class RefitLabelUpdateThread implements Runnable {
     Logger log = Global.getLogger(this.getClass());
     float x = 250;
     float y = 0;
-    List<String> knownHooks = new ArrayList<>();
     int w = 0;
     boolean needsTermination = false;
     ShipAPI ship;
@@ -37,7 +33,10 @@ public class RefitLabelUpdateThread implements Runnable {
 
     void UpdateCrew()
     {
-        label = LabelNames.get(0);
+        label = "Crew Loss";
+        if (!LabelNameTiedValueLabel.containsKey(label)) {
+            return;
+        }
         float temp = (float) (Math.round(stats.getCrewLossMult().getModifiedValue() * 100)) / 100;
         try {
             value = ""+temp;
@@ -71,9 +70,13 @@ public class RefitLabelUpdateThread implements Runnable {
 
     void UpdateRecovery()
     {
-        label = LabelNames.get(1);
-        int temp =(100-(Math.round(stats.getBreakProb().getModifiedValue()*100)));
-        value = ""+temp;
+        label = "Recoverable";
+        if (!LabelNameTiedValueLabel.containsKey(label)) {
+            return;
+        }
+
+        int temp = (100 - (Math.round(stats.getBreakProb().getModifiedValue() * 100)));
+        value = "" + temp;
         value += "%";
 
         if (!LabelNameTiedValue.containsKey(label) || value != LabelNameTiedValue.get(label)) {
@@ -89,6 +92,7 @@ public class RefitLabelUpdateThread implements Runnable {
             else
                 l.setColor(Global.getSector().getPlayerFaction().getRelColor(RepLevel.VENGEFUL));
         }
+
 
     }
 
@@ -131,7 +135,6 @@ public class RefitLabelUpdateThread implements Runnable {
             EveryFrameChecks.newFrame = false;
             RPReflectInstance.hookRefit();
             updateStats();
-            updatePositions();
             w = 0;
 
 
